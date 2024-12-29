@@ -59,8 +59,5 @@
     "prettier": "3.4.2",
     "rimraf": "5.0.10",
     "typescript": "5.7.2"
-  },
-  "dependencies": {
-    "puppeteer": "^23.11.1"
   }
 }
