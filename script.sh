@@ -19,6 +19,6 @@ if [ ! -f "$cookies_file" ]; then
 fi
 
 URL="https://www.youtube.com/@JKT48TV/live"
-python3 yt-dlp --cookies $cookies_file $URL -o output -f "bestvideo[height=1080][fps=60][vbr=20000]+bestaudio[acodec=aac][abr=140]"
+yt-dlp --cookies $cookies_file $URL -o output -f "bestvideo[height=1080][fps=60][vbr=20000]+bestaudio[acodec=aac][abr=140]"
 current_date=$(date +"%Y-%m-%d_%H-%M-%S")
 mv output "${current_date}"
