@@ -1,4 +1,4 @@
-# Theater Cookie Processor Script
+# Teater Show Downloader
 
 This script processes a cookies file. It can either be run directly on your machine or within a Docker container.
 
