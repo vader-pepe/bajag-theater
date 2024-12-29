@@ -17,7 +17,7 @@ This script processes a cookies file. It can either be run directly on your mach
    To run the script inside a Docker container, use this command. Make sure to set the ```COOKIES``` environment        variable to the path of your cookies file:
 
    ```bash
-   docker run --rm -e COOKIES=/path/to/cookies_file --name theater-container theater
+   docker run --rm -e COOKIES=/path/to/cookies_file --name theater-container -v ./:/downloads theater
    ```
   - `--rm`: Automatically removes the container after it exits.
   - `-e COOKIES=/path/to/cookies_file`: Sets the `COOKIES` environment variable inside the container.

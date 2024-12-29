@@ -25,5 +25,5 @@ RUN chmod +x script.sh
 # Volume for persisting downloaded files
 VOLUME ["/downloads"]
 
-# Default command to show help message
+# Default command 
 CMD ["bash", "script.sh"]
