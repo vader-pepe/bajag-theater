@@ -26,4 +26,4 @@ RUN chmod +x script.sh
 VOLUME ["/downloads"]
 
 # Default command 
-CMD ["bash", "script.sh"]
+CMD ["tail","-f","/dev/null"]
