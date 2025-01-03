@@ -33,12 +33,12 @@ app.use(requestLogger);
 
 // Routes
 app.use("/health-check", healthCheckRouter);
-app.use("/ffmpeg", express.static(path.resolve("node_modules/@ffmpeg")));
+app.use(express.static(path.resolve("public")));
+app.use("/livestream", express.static(path.resolve("video")));
+
 app.get("/", (_req, res) => {
   res.sendFile(`${__dirname}/view.html`);
 });
-
-app.use("/livestream", express.static(path.resolve("video")));
 
 // Swagger UI
 // app.use(openAPIRouter);

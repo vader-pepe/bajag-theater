@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bajag Theater</title>
-  <link href="https://unpkg.com/video.js/dist/video-js.min.css" rel="stylesheet">
+  <link href="css/video-js.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" type="text/css">
 </head>
 
 <style>
@@ -16,11 +17,82 @@
 </style>
 
 <body>
-  <video-js id=vid1 class="vjs-default-skin" controls>
-    <source src="/livestream/output.m3u8" type="application/x-mpegURL">
-  </video-js>
-  <script src="https://unpkg.com/video.js/dist/video.min.js"></script>
-  <script src="https://unpkg.com/@videojs/http-streaming@3.15.0/dist/videojs-http-streaming.min.js"></script>
+  <section container style="display: flex; flex-direction: column; align-items: center;">
+    <h3 style="padding-top: 2em; padding-bottom: 2em;">Enjoy Theater Tidak Perlu Pusing Fulus</h3>
+    <video-js width=500 id=vid1 class="vjs-default-skin" controls>
+      <source src="/livestream/output.m3u8" type="application/x-mpegURL">
+    </video-js>
+  </section>
+
+  <section container>
+    <h3 style="padding-top: 2em; padding-bottom: 2em;">Jadwal Theater</h3>
+    <div overflow>
+      <table>
+        <thead>
+          <tr>
+            <th>Senin</th>
+            <th>Selasa</th>
+            <th>Rabu</th>
+            <th>Kamis</th>
+            <th>Jumat</th>
+            <th>Sabtu</th>
+            <th>Minggu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section container>
+    <h3 style="padding-top: 2em; padding-bottom: 2em;">Replay</h3>
+    <form>
+      <div>
+        <label for="input">Cari disini</label>
+        <input type="text" id="input" placeholder="Tanggal...">
+      </div>
+    </form>
+  </section>
+
+  <script src="js/video.min.js"></script>
+  <script src="js/videojs-http-streaming.min.js"></script>
   <script>
     var player = videojs('vid1');
     player.play();
