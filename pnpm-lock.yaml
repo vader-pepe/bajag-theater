@@ -8,15 +8,6 @@ dependencies:
   '@asteasolutions/zod-to-openapi':
     specifier: ^7.0.0
     version: 7.3.0(zod@3.24.1)
-  '@ffmpeg/core':
-    specifier: ^0.12.6
-    version: 0.12.8
-  '@ffmpeg/ffmpeg':
-    specifier: ^0.12.6
-    version: 0.12.13
-  '@ffmpeg/util':
-    specifier: ^0.12.1
-    version: 0.12.1
   cors:
     specifier: ^2.8.5
     version: 2.8.5
@@ -856,28 +847,6 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
-
-  /@ffmpeg/core@0.12.8:
-    resolution: {integrity: sha512-GbEy5PKWPYJDv59vm9ehW0Pxf3IoX/a1Ja8+16/wIHt3dj5I6lgYqQNJAnMB/4FeAiIC121jTGegwYDBTLpe0g==}
-    engines: {node: '>=16.x'}
-    dev: false
-
-  /@ffmpeg/ffmpeg@0.12.13:
-    resolution: {integrity: sha512-DX5xvpxkV0QaHIJRMRiz8zfh4mJO01rPKrpXgIzHWSB0A58YMUvbBJxHs4cSJPcX1Lar7HK6RAi28ObsUe7V8A==}
-    engines: {node: '>=18.x'}
-    dependencies:
-      '@ffmpeg/types': 0.12.3
-    dev: false
-
-  /@ffmpeg/types@0.12.3:
-    resolution: {integrity: sha512-WK01NqTfFfdXxxVD2+OQnd6LQp4ahWq2kjIh/eVoTo43Lo9ICI5nLOItg/1rcIvOuM7J1ANWTBazWGBKk1kACA==}
-    engines: {node: '>=16.x'}
-    dev: false
-
-  /@ffmpeg/util@0.12.1:
-    resolution: {integrity: sha512-10jjfAKWaDyb8+nAkijcsi9wgz/y26LOc1NKJradNMyCIl6usQcBbhkjX5qhALrSBcOy6TOeksunTYa+a03qNQ==}
-    engines: {node: '>=18.x'}
-    dev: false
 
   /@isaacs/cliui@8.0.2:
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
