@@ -10,6 +10,13 @@ const rateLimiter = rateLimit({
   standardHeaders: true,
   windowMs: 15 * 60 * env.COMMON_RATE_LIMIT_WINDOW_MS,
   keyGenerator: (req: Request) => req.ip as string,
+  skip: (req) => {
+    const path = req.url;
+    if (path.includes("livestream")) {
+      return true;
+    }
+    return false;
+  },
 });
 
 export default rateLimiter;
