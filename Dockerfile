@@ -1,29 +1,48 @@
-# Use a lightweight base image
+# Stage 1: Build stage
+FROM node:20-alpine AS build
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the rest of the application code
+COPY . .
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install Node.js dependencies
+RUN npm install --omit=dev
+
+# Build the application (if needed)
+RUN npm run build
+
+# Stage 2: Runtime stage
 FROM python:3.11-alpine
 
-# Set environment variables for non-interactive builds
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install required packages
+# Install required packages for yt-dlp and Node.js runtime
 RUN apk add --no-cache \
     ffmpeg \
     curl \
-    bash
+    bash \
+    nodejs \
+    npm
 
-# Install yt-dlp via pip
+# Install yt-dlp
 RUN pip install --no-cache-dir yt-dlp
 
-# Create a directory for downloads
-WORKDIR /downloads
+# Copy the application from the build stage
+WORKDIR /app
+COPY --from=build /app /app
 
-# copy script from host
-COPY script.sh .
-RUN ls
-RUN chmod +x script.sh
+# Install production dependencies
+RUN npm ci --omit=dev
 
-# Volume for persisting downloaded files
-VOLUME ["/downloads"]
+# Expose application port (adjust as per your app)
+EXPOSE 8080
 
-# Default command 
-CMD ["tail","-f","/dev/null"]
+# Default command
+CMD ["node", "dist"]

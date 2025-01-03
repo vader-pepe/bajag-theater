@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
-    "build": "tsup --loader '.html=text'",
+    "build": "tsup --loader '.html=text' && cp src/view.html dist/view.html",
     "start": "node dist/index.js",
     "clean": "rimraf dist coverage",
     "lint": "biome check src/",
@@ -32,7 +32,9 @@
     "pino": "^9.4.0",
     "pino-http": "^10.0.0",
     "swagger-ui-express": "^5.0.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "husky": "^9.0.11",
+    "tsup": "^8.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -42,12 +44,10 @@
     "@types/node-cron": "^3.0.11",
     "@types/supertest": "^6.0.2",
     "@types/swagger-ui-express": "^4.1.6",
-    "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
     "pino-pretty": "^11.0.0",
     "rimraf": "^6.0.0",
     "supertest": "^7.0.0",
-    "tsup": "^8.0.2",
     "tsx": "^4.7.2",
     "typescript": "^5.4.4",
     "vite-tsconfig-paths": "^5.0.0",
