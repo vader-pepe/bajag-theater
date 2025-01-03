@@ -4,8 +4,8 @@ import cron from "node-cron";
 import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
 
+const { NODE_ENV, HOST, PORT } = env;
 const server = app.listen(env.PORT, () => {
-  const { NODE_ENV, HOST, PORT } = env;
   logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
 });
 
@@ -43,8 +43,10 @@ const grabLive = () => {
     if (message.toLowerCase().includes("error") || message.toLowerCase().includes("warning")) {
       logger.error(`Script error: ${data}`);
       scriptState = { error: true, message: data.toString().trim(), isDownloading: false };
+    } else {
+      scriptState = { error: false, message: data.toString().trim(), isDownloading: false };
+      logger.info(`Script output on stderr: ${data}`);
     }
-    logger.info(`Script output on stderr: ${data}`);
     scriptState = { error: false, message: data.toString().trim(), isDownloading: false };
   });
 
@@ -63,11 +65,13 @@ const grabLive = () => {
 };
 
 // WARNING: for testing purpose!
-// cron.schedule("* * * * *", async () => {
-//   if (!scriptState.isDownloading) {
-//     grabLive();
-//   }
-// });
+if (NODE_ENV === "development") {
+  cron.schedule("* * * * *", async () => {
+    if (!scriptState.isDownloading) {
+      grabLive();
+    }
+  });
+}
 
 // Schedule job from 18:45 to 19:00 Monday to Friday
 cron.schedule("45-59 18 * * 1-5", async () => {
