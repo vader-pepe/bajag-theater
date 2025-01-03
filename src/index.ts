@@ -26,6 +26,7 @@ cron.schedule("45-59 18 * * 1-5", () => {
       console.log(stdout);
       isDownloading = true;
       if (error !== null) {
+        isDownloading = false;
         // const notif = "The channel is not currently live";
         // const err = `${error}`;
         console.log(`exec error: ${error}`);
@@ -41,6 +42,7 @@ cron.schedule("0-59 14-19 * * 6,7", () => {
       console.log(stdout);
       isDownloading = true;
       if (error !== null) {
+        isDownloading = false;
         console.log(`exec error: ${error}`);
       }
     });
