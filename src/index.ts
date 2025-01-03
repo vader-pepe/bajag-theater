@@ -25,18 +25,27 @@ const grabLive = () => {
 
   // Handle script's standard output
   script.stdout.on("data", (data) => {
-    logger.info(`Script output: ${data}`);
-    scriptState = { error: false, message: data.toString().trim(), isDownloading: true };
+    logger.info(`Script output on stdout: ${data}`);
+    const message = data.toString();
+    if (message.toLowerCase().includes("error")) {
+      scriptState = { error: true, message: data.toString().trim(), isDownloading: false };
+    }
   });
 
   // Handle script's standard error
   script.stderr.on("data", (data) => {
     const message = data.toString();
-    if (message.includes("error") || message.toLowerCase().includes("warning")) {
-      logger.error(`Script error: ${data}`);
+    const constant = "Downloading 1 format";
+    if (message.includes(constant)) {
+      logger.info("downloading has been started");
+      scriptState = { error: true, message: data.toString().trim(), isDownloading: true };
     }
-    logger.info(`Script output: ${data}`);
-    scriptState = { error: true, message: data.toString().trim(), isDownloading: false };
+    if (message.toLowerCase().includes("error") || message.toLowerCase().includes("warning")) {
+      logger.error(`Script error: ${data}`);
+      scriptState = { error: true, message: data.toString().trim(), isDownloading: false };
+    }
+    logger.info(`Script output on stderr: ${data}`);
+    scriptState = { error: false, message: data.toString().trim(), isDownloading: false };
   });
 
   // Handle script exit
@@ -45,6 +54,7 @@ const grabLive = () => {
       logger.error(`Script exited with code: ${code}`);
       scriptState = { error: true, message: `Script exited with code: ${code}`, isDownloading: false };
     } else {
+      scriptState = { error: false, message: `Script exited with code: ${code}`, isDownloading: false };
       logger.info("Script exited normally.");
     }
   });
