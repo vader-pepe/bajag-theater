@@ -25,56 +25,29 @@
   </section>
 
   <section container>
-    <h3 style="padding-top: 2em; padding-bottom: 2em;">Jadwal Theater</h3>
+    <h3 style="padding-top: 1em; padding-bottom: 1em;">Jadwal Theater</h3>
     <div overflow>
       <table>
         <thead>
           <tr>
+            <th>Minggu</th>
             <th>Senin</th>
             <th>Selasa</th>
             <th>Rabu</th>
             <th>Kamis</th>
             <th>Jumat</th>
             <th>Sabtu</th>
-            <th>Minggu</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td>19:00 Ingin Bertemu</td>
+            <td>19:00 Ingin Bertemu</td>
+            <td>19:00 Ingin Bertemu</td>
+            <td>19:00 Ingin Bertemu</td>
+            <td>19:00 Ingin Bertemu</td>
+            <td>19:00 Ingin Bertemu</td>
+            <td>19:00 Ingin Bertemu</td>
           </tr>
         </tbody>
       </table>
@@ -82,17 +55,27 @@
   </section>
 
   <section container>
-    <h3 style="padding-top: 2em; padding-bottom: 2em;">Replay</h3>
+    <h3 style="padding-top: 1em; padding-bottom: 1em;">Replay</h3>
     <form>
       <div>
         <label for="input">Cari disini</label>
         <input type="text" id="input" placeholder="Tanggal...">
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+          <a href="/link-to-replay">
+            <div style="width: 250px; background: black; height: 150px; margin: 0;">Pajama Drive</div>
+          </a>
+          <a href="/link-to-replay">
+            <div style="width: 250px; background: black; height: 150px; margin: 0;">Pajama Drive</div>
+          </a>
+        </div>
       </div>
     </form>
   </section>
 
   <script src="js/video.min.js"></script>
   <script src="js/videojs-http-streaming.min.js"></script>
+  <script src="js/htmx.min.js"></script>
   <script>
     var player = videojs('vid1');
     player.play();

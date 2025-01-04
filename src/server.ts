@@ -26,7 +26,10 @@ app.use(
     contentSecurityPolicy: false,
   }),
 );
-app.use(rateLimiter);
+
+if (env.NODE_ENV === "production") {
+  app.use(rateLimiter);
+}
 
 // Request logging
 app.use(requestLogger);
@@ -35,6 +38,7 @@ app.use(requestLogger);
 app.use("/health-check", healthCheckRouter);
 app.use(express.static(path.resolve("public")));
 app.use("/livestream", express.static(path.resolve("video")));
+app.use("/replay", express.static(path.resolve("replay")));
 
 app.get("/", (_req, res) => {
   res.sendFile(`${__dirname}/view.html`);
