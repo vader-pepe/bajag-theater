@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import cron from "node-cron";
 
 import { env } from "@/common/utils/envConfig";
@@ -85,6 +86,13 @@ cron.schedule("0-59 14-19 * * 6,7", () => {
   if (!scriptState.isDownloading) {
     grabLive();
   }
+});
+
+// Schedule for grabbing show schedule
+cron.schedule("* 1 * * *", async () => {
+  const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
+  const data = await raw.text();
+  writeFileSync("src/calendar.html", data);
 });
 
 process.on("SIGINT", onCloseSignal);
