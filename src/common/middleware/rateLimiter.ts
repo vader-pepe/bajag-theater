@@ -12,7 +12,7 @@ const rateLimiter = rateLimit({
   keyGenerator: (req: Request) => req.ip as string,
   skip: (req) => {
     const path = req.url;
-    if (path.includes("livestream") || path.includes("css") || path.includes("js")) {
+    if (path.includes("livestream") || path.includes("css") || path.includes("js") || path.includes("img")) {
       return true;
     }
     return false;

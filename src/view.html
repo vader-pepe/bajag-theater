@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bajag Theater</title>
-  <link href="css/video-js.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css" type="text/css">
+  <link href="/css/video-js.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -16,7 +16,7 @@
 <body>
   <section container style="display: flex; flex-direction: column; align-items: center;">
     <h3 style="padding-top: 2em; padding-bottom: 2em;">Enjoy Theater Tidak Perlu Pusing Fulus</h3>
-    <video-js width=500 id=vid1 class="vjs-default-skin" controls>
+    <video-js width=500 id="vid1" class="vjs-default-skin" controls>
       <source src="/livestream/output.m3u8" type="application/x-mpegURL">
     </video-js>
   </section>
@@ -37,7 +37,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr id="content">
+          <tr hx-trigger="load" hx-get="/schedule/htmx" id="content">
             <td></td>
             <td></td>
             <td></td>
@@ -52,42 +52,28 @@
   </section>
 
   <section container>
-    <h3 style="padding-top: 1em; padding-bottom: 1em;">Replay</h3>
+    <h3>Replay</h3>
     <form>
       <div>
-        <label for="input">Cari disini</label>
-        <input type="date" id="input" placeholder="Tanggal...">
+        <div style="margin: 1em 0;">
+          <label for="input">Cari disini</label>
+          <input hx-vals='js:{date: document.querySelector("input").value || undefined}' hx-target="#replays"
+            hx-trigger="input changed delay:500ms, keyup[key=='Enter'], load" hx-get="/replay/htmx" type="date"
+            placeholder="Tanggal...">
+        </div>
 
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-          <a href="/link-to-replay">
-            <div style="width: 250px; background: black; height: 150px; margin: 0;">Pajama Drive</div>
-          </a>
-          <a href="/link-to-replay">
-            <div style="width: 250px; background: black; height: 150px; margin: 0;">Pajama Drive</div>
-          </a>
+        <div id="replays" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
         </div>
       </div>
     </form>
   </section>
 
-  <script src="js/video.min.js"></script>
-  <script src="js/videojs-http-streaming.min.js"></script>
-  <!-- <script src="js/htmx.min.js"></script> -->
+  <script src="/js/video.min.js"></script>
+  <script src="/js/videojs-http-streaming.min.js"></script>
+  <script src="/js/htmx.min.js"></script>
   <script>
     var player = videojs('vid1');
     player.play();
-
-    var schedule = document.querySelector("#content");
-
-    async function getSchedule() {
-      const raw = await fetch("/schedule")
-      const data = await raw.json();
-      return data;
-    }
-
-    getSchedule().then(data => {
-      schedule.innerHTML = data.responseObject;
-    })
 
   </script>
 </body>

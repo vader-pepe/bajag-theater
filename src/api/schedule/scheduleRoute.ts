@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { type PathLike, existsSync, readFileSync } from "node:fs";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import { z } from "zod";
@@ -13,6 +13,18 @@ import { findAndExtractUsingRegex, parseSchedule } from "@/common/utils/regex";
 export const scheduleRegistry = new OpenAPIRegistry();
 export const scheduleRouter: Router = express.Router();
 
+function parseHtml(path: PathLike) {
+  if (existsSync(path)) {
+    const html = readFileSync(path, "utf8");
+    const extractedHtml = findAndExtractUsingRegex(html);
+    const parsedHtml = parseSchedule(extractedHtml);
+    const dates = getDaysForCurrentWeek();
+    const jsonData = mapDaysToData(dates, parsedHtml);
+    return jsonData;
+  }
+  return null;
+}
+
 scheduleRegistry.registerPath({
   method: "get",
   path: "/schedule",
@@ -21,16 +33,21 @@ scheduleRegistry.registerPath({
 });
 
 scheduleRouter.get("/", (_req, res) => {
-  if (existsSync("src/calendar.html")) {
-    const html = readFileSync("src/calendar.html", "utf8");
-    const extractedHtml = findAndExtractUsingRegex(html);
-    const parsedHtml = parseSchedule(extractedHtml);
-    const dates = getDaysForCurrentWeek();
-    const jsonData = mapDaysToData(dates, parsedHtml);
-    const table = formatTableData(jsonData);
-
-    const serviceResponse = ServiceResponse.success("Successfully grab theater schedule!", table);
+  const data = parseHtml("src/calendar.html");
+  if (data) {
+    const serviceResponse = ServiceResponse.success("Successfully grab theater schedule!", data);
     return handleServiceResponse(serviceResponse, res);
+  }
+  const serviceResponse = ServiceResponse.failure("Failed grab theater schedule!", null);
+  return handleServiceResponse(serviceResponse, res);
+});
+
+scheduleRouter.get("/htmx", (_req, res) => {
+  const data = parseHtml("src/calendar.html");
+  if (data) {
+    const stringData = formatTableData(data);
+    const serviceResponse = ServiceResponse.success("Successfully grab theater schedule!", stringData);
+    return handleServiceResponse(serviceResponse, res, true);
   }
   const serviceResponse = ServiceResponse.failure("Failed grab theater schedule!", null);
   return handleServiceResponse(serviceResponse, res);

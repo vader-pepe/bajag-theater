@@ -4,7 +4,7 @@ import { z } from "zod";
 extendZodWithOpenApi(z);
 
 export const GetReplaySchema = z.object({
-  params: z.object({
-    date: z.string().date(),
+  query: z.object({
+    date: z.optional(z.string()),
   }),
 });

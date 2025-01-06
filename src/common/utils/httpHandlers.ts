@@ -4,7 +4,10 @@ import type { ZodError, ZodSchema } from "zod";
 
 import { ServiceResponse } from "@/common/models/serviceResponse";
 
-export const handleServiceResponse = (serviceResponse: ServiceResponse<any>, response: Response) => {
+export const handleServiceResponse = (serviceResponse: ServiceResponse<any>, response: Response, isHtmx = false) => {
+  if (isHtmx) {
+    return response.status(serviceResponse.statusCode).send(serviceResponse.responseObject);
+  }
   return response.status(serviceResponse.statusCode).send(serviceResponse);
 };
 
