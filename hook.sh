@@ -4,7 +4,7 @@
 main_command="$1"
 shift
 args="$@"
-current_date=$(date +"%Y-%m-%d_%H-%M-%S")
+current_date=$(date +"%Y-%d-%m %H:%M:%S")
 
 # Run the main command
 $main_command $args
