@@ -19,4 +19,4 @@ if [ ! -f "$cookies_file" ]; then
 fi
 
 URL="https://www.youtube.com/@JKT48TV/live"
-yt-dlp --live-from-start --cookies $cookies_file $URL -o - | ffmpeg -i pipe:0 -c:v libx264 -preset veryslow -crf 18 -c:a aac -b:a 192k -profile:v high -level 4.1 -s 1920x1080 -pix_fmt yuv420p -fflags nobuffer -probesize 32 -hls_time 2 -hls_list_size 0 -f hls video/output.m3u8
+yt-dlp --live-from-start --cookies $cookies_file $URL -o - | ffmpeg -i pipe:0 -c:v libx264 -preset veryslow -crf 18 -c:a aac -b:a 192k -profile:v high -level 4.1 -s 1920x1080 -pix_fmt yuv420p -fflags nobuffer -probesize 32 -af "volume=2" -hls_time 2 -hls_list_size 0 -f hls video/output.m3u8

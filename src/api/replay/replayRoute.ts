@@ -117,6 +117,7 @@ replayRouter.get("/play/:filename", (req, res) => {
       "-b:v 1000k", // Video bitrate
       "-b:a 128k", // Audio bitrate
     ])
+    .audioFilters("volume=2")
     .format("mp4") // Set output format
     .on("error", (err) => {
       console.error("FFmpeg error:", err.message);
