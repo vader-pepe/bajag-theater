@@ -1,4 +1,5 @@
-import { type PathLike, existsSync, readdirSync, statSync } from "node:fs";
+import { type PathLike, existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
@@ -49,20 +50,33 @@ const template = (filename: PathLike) => {
 </html>`;
 };
 
-function fetchReplays() {
-  const data: Array<string> = [];
-  if (existsSync("replay")) {
-    readdirSync("replay").forEach((file) => {
-      data.push(file);
-    });
-  }
+/**
+ * Recursively lists files in a folder.
+ * @param folderPath The path to the folder.
+ * @returns A Promise that resolves to an array of file paths.
+ */
+async function fetchReplays(folderPath: string | null = "replay"): Promise<string[]> {
+  const files: string[] = [];
+  if (folderPath) {
+    const entries = await readdir(folderPath, { withFileTypes: true });
 
-  return data;
+    for (const entry of entries) {
+      const fullPath = path.join(folderPath, entry.name);
+
+      if (entry.isDirectory()) {
+        const nestedFiles = await fetchReplays(fullPath);
+        files.push(...nestedFiles);
+      } else if (entry.isFile()) {
+        files.push(fullPath);
+      }
+    }
+  }
+  return files;
 }
 
-replayRouter.get("/", validateRequest(GetReplaySchema), (req, res) => {
+replayRouter.get("/", validateRequest(GetReplaySchema), async (req, res) => {
   const date = req.query.date as string;
-  const data = fetchReplays();
+  const data = await fetchReplays();
 
   if (date) {
     const filtered = data.filter((file) => file.includes(date));
@@ -74,9 +88,9 @@ replayRouter.get("/", validateRequest(GetReplaySchema), (req, res) => {
   return handleServiceResponse(serviceResponse, res);
 });
 
-replayRouter.get("/htmx", validateRequest(GetReplaySchema), (req, res) => {
+replayRouter.get("/htmx", validateRequest(GetReplaySchema), async (req, res) => {
   const date = req.query.date as string;
-  const data = fetchReplays();
+  const data = await fetchReplays();
 
   if (date === "undefined") {
     const stringData = generateLinks(data);
@@ -90,14 +104,13 @@ replayRouter.get("/htmx", validateRequest(GetReplaySchema), (req, res) => {
   return handleServiceResponse(serviceResponse, res, true);
 });
 
-replayRouter.get("/:filename", (req, res) => {
-  const filename = req.params.filename;
-  return res.send(template(filename));
-});
+interface PlayParams {
+  "0": string; // Matches the wildcard in '/play/*'
+}
 
-replayRouter.get("/play/:filename", (req, res) => {
-  const filename = req.params.filename;
-  const filepath = path.resolve(`replay/${filename}`);
+replayRouter.get("/play/*", (req, res) => {
+  const params = req.params as unknown as PlayParams;
+  const filepath = path.resolve(params[0]);
   if (!existsSync(filepath)) {
     const serviceResponse = ServiceResponse.failure("File does not exist!", null);
     return handleServiceResponse(serviceResponse, res);

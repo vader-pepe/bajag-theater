@@ -7,6 +7,7 @@ import { pino } from "pino";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
 import { replayRouter } from "@/api/replay/replayRoute";
 import { scheduleRouter } from "@/api/schedule/scheduleRoute";
+import { watchRouter } from "@/api/watch/watchRoute";
 import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
@@ -41,6 +42,7 @@ app.use("/schedule", scheduleRouter);
 app.use(express.static(path.resolve("public")));
 app.use("/livestream", express.static(path.resolve("video")));
 app.use("/replay", replayRouter);
+app.use("/watch", watchRouter);
 
 app.get("/", (_req, res) => {
   res.sendFile(`${__dirname}/view.html`);
