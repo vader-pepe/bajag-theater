@@ -47,13 +47,13 @@ app.get("/livestream/output.m3u8", async (_req, res) => {
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   try {
     const stdout = await ytDlpWrap.execPromise([
-      "https://www.youtube.com/@JKT48TV/live",
+      "https://www.youtube.com/@LofiGirl/live",
       "-g",
       "--cookies",
       cookiesPath,
     ]);
 
-    const proxy_url = "http://127.0.0.1:8080";
+    const proxy_url = `http://${env.HLSD_HOST}:${env.HLSD_PORT}`;
     const video_url = stdout;
     const file_extension = ".m3u8";
 
