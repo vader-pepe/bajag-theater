@@ -12,6 +12,7 @@ import { watchRouter } from "@/api/watch/watchRoute";
 import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
+import { transformInput } from "@/common/utils/dataMapping";
 import { env } from "@/common/utils/envConfig";
 
 const logger = pino({ name: "server start" });
@@ -47,14 +48,23 @@ app.get("/livestream/output.m3u8", async (_req, res) => {
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   try {
     const stdout = await ytDlpWrap.execPromise([
-      "https://www.youtube.com/@JKT48TV/live",
-      "-g",
       "--cookies",
       cookiesPath,
+      "--flat-playlist",
+      "--match-filter",
+      "is_live",
+      "https://www.youtube.com/@JKT48TV",
+      "--print-json",
     ]);
 
+    const altered = transformInput(stdout);
+    const filtered = altered.filter((item) => item.is_live === true);
+    const yt_url = filtered[0].url;
+
+    const m3u8 = await ytDlpWrap.execPromise([yt_url, "-g", "--cookies", cookiesPath]);
+
     const proxy_url = `http://${env.HLSD_HOST}:${env.HLSD_PORT}`;
-    const video_url = stdout;
+    const video_url = m3u8;
     const file_extension = ".m3u8";
 
     const hls_proxy_url = `${proxy_url}/${btoa(video_url)}${file_extension}`;
@@ -64,6 +74,7 @@ app.get("/livestream/output.m3u8", async (_req, res) => {
 
     return res.send(content);
   } catch (error) {
+    console.log(error);
     return res.status(500).send("ERROR");
   }
 });
