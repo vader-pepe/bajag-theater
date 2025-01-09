@@ -3,6 +3,7 @@ import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
 import { pino } from "pino";
+import YTDlpWrap from "yt-dlp-wrap";
 
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
 import { replayRouter } from "@/api/replay/replayRoute";
@@ -40,12 +41,32 @@ app.use(requestLogger);
 app.use("/health-check", healthCheckRouter);
 app.use("/schedule", scheduleRouter);
 app.use(express.static(path.resolve("public")));
-app.use("/livestream", express.static(path.resolve("video")));
+app.get("/livestream/output.m3u8", async (req, res) => {
+  const ytdlpath = path.resolve(".");
+  const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
+  try {
+    const stdout = await ytDlpWrap.execPromise(["https://www.youtube.com/@JKT48TV/live", "-g"]);
+
+    const proxy_url = "http://127.0.0.1:8080";
+    const video_url = stdout;
+    const file_extension = ".m3u8";
+
+    const hls_proxy_url = `${proxy_url}/${btoa(video_url)}${file_extension}`;
+
+    const file = await fetch(hls_proxy_url);
+    const content = await file.text();
+
+    return res.send(content);
+  } catch (error) {
+    return res.status(500).send("ERROR");
+  }
+});
+
 app.use("/replay", replayRouter);
 app.use("/watch", watchRouter);
 
-app.get("/", (_req, res) => {
-  res.sendFile(`${__dirname}/view.html`);
+app.get("/", async (_req, res) => {
+  return res.sendFile(`${__dirname}/view.html`);
 });
 
 // Swagger UI
