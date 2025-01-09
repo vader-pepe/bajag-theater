@@ -7,7 +7,7 @@ services:
     build:
       dockerfile: Dockerfile-hlsd
     ports:
-      - "8080:8080"
+      - "8080:80"
     restart: always
 
   bajag-theater:
