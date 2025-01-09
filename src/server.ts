@@ -47,7 +47,7 @@ app.get("/livestream/output.m3u8", async (_req, res) => {
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   try {
     const stdout = await ytDlpWrap.execPromise([
-      "https://www.youtube.com/@LofiGirl/live",
+      "https://www.youtube.com/@JKT48TV/live",
       "-g",
       "--cookies",
       cookiesPath,
