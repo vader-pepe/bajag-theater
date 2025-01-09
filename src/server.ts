@@ -41,11 +41,17 @@ app.use(requestLogger);
 app.use("/health-check", healthCheckRouter);
 app.use("/schedule", scheduleRouter);
 app.use(express.static(path.resolve("public")));
-app.get("/livestream/output.m3u8", async (req, res) => {
+app.get("/livestream/output.m3u8", async (_req, res) => {
+  const cookiesPath = path.resolve("cookies/cookies");
   const ytdlpath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   try {
-    const stdout = await ytDlpWrap.execPromise(["https://www.youtube.com/@JKT48TV/live", "-g"]);
+    const stdout = await ytDlpWrap.execPromise([
+      "https://www.youtube.com/@JKT48TV/live",
+      "-g",
+      "--cookies",
+      cookiesPath,
+    ]);
 
     const proxy_url = "http://127.0.0.1:8080";
     const video_url = stdout;
