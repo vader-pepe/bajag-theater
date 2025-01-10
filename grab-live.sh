@@ -31,4 +31,4 @@ if [ -z "$yt_url" ]; then
 fi
 
 URL="$yt_url"
-yt-dlp --live-from-start --cookies $cookies_file --merge-output-format mkv $URL -o output.mkv
+yt-dlp --live-from-start --cookies $cookies_file --merge-output-format mkv $URL -o video/output.mkv
