@@ -42,26 +42,30 @@ app.use(requestLogger);
 app.use("/health-check", healthCheckRouter);
 app.use("/schedule", scheduleRouter);
 app.use(express.static(path.resolve("public")));
+let url = "";
 app.get("/livestream/output.m3u8", async (_req, res) => {
   const cookiesPath = path.resolve("cookies/cookies");
   const ytdlpath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   try {
-    const stdout = await ytDlpWrap.execPromise([
-      "--cookies",
-      cookiesPath,
-      "--flat-playlist",
-      "--match-filter",
-      "is_live",
-      "https://www.youtube.com/@JKT48TV",
-      "--print-json",
-    ]);
+    if (!url) {
+      console.log("URL being fetched");
+      const stdout = await ytDlpWrap.execPromise([
+        "--cookies",
+        cookiesPath,
+        "--flat-playlist",
+        "--match-filter",
+        "is_live",
+        "https://www.youtube.com/@LofiGirl",
+        "--print-json",
+      ]);
 
-    const altered = transformInput(stdout);
-    const filtered = altered.filter((item) => item.is_live === true);
-    const yt_url = filtered[0].url;
+      const altered = transformInput(stdout);
+      const filtered = altered.filter((item) => item.is_live === true);
+      url = filtered[0].url;
+    }
 
-    const m3u8 = await ytDlpWrap.execPromise([yt_url, "-g", "--cookies", cookiesPath]);
+    const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
 
     const proxy_url = `http://${env.HLSD_HOST}:${env.HLSD_PORT}`;
     const video_url = m3u8;
