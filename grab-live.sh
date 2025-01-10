@@ -18,5 +18,17 @@ if [ ! -f "$cookies_file" ]; then
   exit 1
 fi
 
-URL="https://www.youtube.com/@JKT48TV/live"
-yt-dlp --live-from-start --cookies $cookies_file $URL -o - | ffmpeg -i pipe:0 -c:v libx264 -preset veryslow -crf 18 -c:a aac -b:a 192k -profile:v high -level 4.1 -s 1920x1080 -pix_fmt yuv420p -fflags nobuffer -probesize 32 -af "volume=2" -hls_time 2 -hls_list_size 0 -f hls video/output.m3u8
+# Get the JSON output of the playlist
+stdout=$(yt-dlp --cookies $cookies_file --flat-playlist --match-filter "is_live" https://www.youtube.com/@JKT48TV --print-json)
+
+# Transform and filter the live streams
+yt_url=$(echo "$stdout" | jq -r 'select(.is_live == true) | .url' | head -n 1)
+
+# Check if a URL was found
+if [ -z "$yt_url" ]; then
+  echo "No live streams found."
+  exit 1
+fi
+
+URL="$yt_url"
+yt-dlp --live-from-start --cookies $cookies_file --merge-output-format mkv $URL -o output.mkv
