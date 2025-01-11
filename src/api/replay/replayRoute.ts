@@ -1,8 +1,8 @@
-import { type PathLike, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import express, { type Request, type Response, type Router } from "express";
+import express, { type Router } from "express";
 import ffmpeg from "fluent-ffmpeg";
 import { z } from "zod";
 
@@ -11,6 +11,7 @@ import { GetReplaySchema } from "@/api/replay/replayModel";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { generateLinks } from "@/common/utils/dataMapping";
 import { handleServiceResponse, validateRequest } from "@/common/utils/httpHandlers";
+import { logger } from "@/server";
 
 export const replayRegistry = new OpenAPIRegistry();
 export const replayRouter: Router = express.Router();
@@ -105,14 +106,14 @@ replayRouter.get("/play/*", (req, res) => {
     .audioFilters("volume=2")
     .format("mp4") // Set output format
     .on("error", (err) => {
-      console.error("FFmpeg error:", err.message);
+      logger.error("FFmpeg error:", err.message);
       if (!res.headersSent) {
         const serviceResponse = ServiceResponse.failure("Failed!", null);
         return handleServiceResponse(serviceResponse, res);
       }
     })
     .on("end", () => {
-      console.log("Streaming finished");
+      logger.info("Streaming finished");
       return res.end(); // Ensure the response ends properly
     })
     .pipe(res, { end: true }); // Stream the output to the response

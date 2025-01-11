@@ -61,7 +61,7 @@ livesreamRouter.get("/output.m3u8", async (_req, res) => {
     const serviceResponse = ServiceResponse.success("Success!", content);
     return handleServiceResponse(serviceResponse, res, true);
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     const serviceResponse = ServiceResponse.failure("Something went wrong", null);
     return handleServiceResponse(serviceResponse, res);
   }
