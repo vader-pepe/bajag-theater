@@ -7,7 +7,7 @@ interface YoutubeData {
   _type: string;
   ie_key: string;
   id: string;
-  url: string;
+  url?: string;
   title: string;
   description: string;
   duration: number | null;

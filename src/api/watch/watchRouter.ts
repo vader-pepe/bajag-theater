@@ -1,5 +1,6 @@
 import type { PathLike } from "node:fs";
-import path from "node:path";
+import { ServiceResponse } from "@/common/models/serviceResponse";
+import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import express, { type Router } from "express";
 
 export const watchRouter: Router = express.Router();
@@ -39,5 +40,6 @@ interface PlayParams {
 watchRouter.get("/*", (req, res) => {
   const params = req.params as unknown as PlayParams;
   const replayFolder = params[0];
-  return res.send(template(replayFolder));
+  const serviceResponse = ServiceResponse.success("Successfully grab file", template(replayFolder));
+  return handleServiceResponse(serviceResponse, res, true);
 });

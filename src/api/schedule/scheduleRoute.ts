@@ -1,6 +1,6 @@
 import { type PathLike, existsSync, readFileSync } from "node:fs";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import express, { type Request, type Response, type Router } from "express";
+import express, { type Router } from "express";
 import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
@@ -50,5 +50,5 @@ scheduleRouter.get("/htmx", (_req, res) => {
     return handleServiceResponse(serviceResponse, res, true);
   }
   const serviceResponse = ServiceResponse.failure("Failed grab theater schedule!", null);
-  return handleServiceResponse(serviceResponse, res);
+  return handleServiceResponse(serviceResponse, res, true);
 });
