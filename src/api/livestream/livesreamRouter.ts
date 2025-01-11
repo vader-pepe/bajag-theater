@@ -48,6 +48,9 @@ livesreamRouter.get("/output.m3u8", async (_req, res) => {
     }
 
     const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
+    if(!m3u8.endsWith("m3u8")){
+      url = "";
+    }
 
     const proxy_url = `${env.HLSD_HOST}`;
     const video_url = m3u8;
