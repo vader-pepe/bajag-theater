@@ -77,6 +77,7 @@ if (NODE_ENV === "development") {
 // Schedule job from 18:45 to 19:00 Monday to Friday
 cron.schedule("45-59 18 * * 1-5", async () => {
   if (!scriptState.isDownloading) {
+    logger.info("Weekday job starting");
     grabLive();
   }
 });
@@ -84,6 +85,7 @@ cron.schedule("45-59 18 * * 1-5", async () => {
 // Schedule job from 14:00 to 19:00 Saturday and Sunday
 cron.schedule("0-59 14-19 * * 6,7", () => {
   if (!scriptState.isDownloading) {
+    logger.info("Weekend job starting");
     grabLive();
   }
 });
