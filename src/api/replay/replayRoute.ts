@@ -31,8 +31,11 @@ replayRegistry.registerPath({
 async function fetchReplays(folderPath: string | null = "replay"): Promise<string[]> {
   const files: string[] = [];
   if (folderPath) {
-    // TODO: causes server crash
-    const entries = await readdir(folderPath, { withFileTypes: true });
+    // check if folder accessible
+    const entries = await readdir(folderPath, { withFileTypes: true }).catch(() => null);
+    if (!entries) {
+      return files;
+    }
 
     for (const entry of entries) {
       const fullPath = path.join(folderPath, entry.name);
