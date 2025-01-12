@@ -81,9 +81,15 @@ cron.schedule("45-59 18 * * 1-5", async () => {
     grabLive();
   }
 });
+cron.schedule("0-59 19 * * 1-5", async () => {
+  if (!scriptState.isDownloading) {
+    logger.info("Weekday job starting");
+    grabLive();
+  }
+});
 
 // Schedule job from 14:00 to 19:00 Saturday and Sunday
-cron.schedule("0-59 14-19 * * 6,7", () => {
+cron.schedule("0-59 14-21 * * 6,7", () => {
   if (!scriptState.isDownloading) {
     logger.info("Weekend job starting");
     grabLive();
