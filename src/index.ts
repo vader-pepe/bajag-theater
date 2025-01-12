@@ -65,17 +65,17 @@ const grabLive = () => {
   return script;
 };
 
-cron.schedule("* * * * *", async () => {
-  if (!scriptState.isDownloading) {
-    logger.info("Trying to grab live stream");
-    grabLive();
-  }
-
-  logger.info("Grabbing show schedule");
-  const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
-  const data = await raw.text();
-  writeFileSync("src/calendar.html", data);
-});
+// cron.schedule("* * * * *", async () => {
+//   if (!scriptState.isDownloading) {
+//     logger.info("Trying to grab live stream");
+//     grabLive();
+//   }
+//
+//   logger.info("Grabbing show schedule");
+//   const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
+//   const data = await raw.text();
+//   writeFileSync("src/calendar.html", data);
+// });
 
 process.on("SIGINT", onCloseSignal);
 process.on("SIGTERM", onCloseSignal);
