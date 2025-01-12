@@ -65,39 +65,16 @@ const grabLive = () => {
   return script;
 };
 
-// WARNING: for testing purpose!
-if (NODE_ENV === "development") {
-  cron.schedule("* * * * *", async () => {
-    if (!scriptState.isDownloading) {
-      grabLive();
-    }
-  });
-}
-
-// Schedule job from 18:45 to 19:00 Monday to Friday
-cron.schedule("45-59 18 * * 1-5", async () => {
+cron.schedule("* * * * *", async () => {
   if (!scriptState.isDownloading) {
-    logger.info("Weekday job starting");
-    grabLive();
-  }
-});
-cron.schedule("0-59 19 * * 1-5", async () => {
-  if (!scriptState.isDownloading) {
-    logger.info("Weekday job starting");
-    grabLive();
-  }
-});
-
-// Schedule job from 14:00 to 19:00 Saturday and Sunday
-cron.schedule("0-59 14-21 * * 6,7", () => {
-  if (!scriptState.isDownloading) {
-    logger.info("Weekend job starting");
+    logger.info("Downloading live stream");
     grabLive();
   }
 });
 
 // Schedule for grabbing show schedule
 cron.schedule("* 1 * * *", async () => {
+  logger.info("Grabbing show schedule");
   const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
   const data = await raw.text();
   writeFileSync("src/calendar.html", data);
