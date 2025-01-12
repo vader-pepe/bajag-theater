@@ -48,7 +48,7 @@ livesreamRouter.get("/output.m3u8", async (_req, res) => {
     }
 
     const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
-    if(!m3u8.endsWith("m3u8")){
+    if (!m3u8.trim().endsWith("m3u8")) {
       url = "";
     }
 
