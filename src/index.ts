@@ -67,13 +67,10 @@ const grabLive = () => {
 
 cron.schedule("* * * * *", async () => {
   if (!scriptState.isDownloading) {
-    logger.info("Downloading live stream");
+    logger.info("Trying to grab live stream");
     grabLive();
   }
-});
 
-// Schedule for grabbing show schedule
-cron.schedule("* 1 * * *", async () => {
   logger.info("Grabbing show schedule");
   const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
   const data = await raw.text();
