@@ -14,6 +14,9 @@ build
 dist-ssr
 *.local
 .env
+cookies
+isDownloading
+url
 
 # Editor directories and files
 !.vscode/extensions.json

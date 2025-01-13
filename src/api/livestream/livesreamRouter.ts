@@ -42,7 +42,7 @@ livesreamRouter.get("/output.m3u8", async (_req, res) => {
 
       const altered = transformInput(stdout);
       const filtered = altered.filter((item) => item.is_live === true);
-      url = filtered[0].url || "";
+      url = filtered?.[0]?.url || "";
     } else {
       logger.info(`URL already fetched (${url}). Skipping`);
     }
