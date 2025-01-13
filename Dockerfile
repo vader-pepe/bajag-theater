@@ -31,9 +31,6 @@ RUN apk add --no-cache \
     nodejs \
     npm
 
-# Install yt-dlp
-RUN pip install --no-cache-dir yt-dlp
-
 # Copy the application from the build stage
 WORKDIR /app
 COPY --from=build /app /app
