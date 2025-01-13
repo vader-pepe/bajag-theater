@@ -77,7 +77,10 @@ cron.schedule("* * * * *", async () => {
   } else {
     logger.info("Stream still running. Skipping");
   }
+});
 
+// cron for every hour
+cron.schedule("* 1 * * *", async () => {
   logger.info("Grabbing show schedule");
   const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
   const data = await raw.text();

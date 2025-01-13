@@ -29,8 +29,7 @@ RUN apk add --no-cache \
     curl \
     bash \
     nodejs \
-    npm \
-    jq
+    npm
 
 # Install yt-dlp
 RUN pip install --no-cache-dir yt-dlp

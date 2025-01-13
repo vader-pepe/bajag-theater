@@ -1,3 +1,4 @@
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -21,14 +22,14 @@ livestreamRegistry.registerPath({
   responses: createApiResponse(z.string(), "Success"),
 });
 
-let url = "";
 livesreamRouter.get("/output.m3u8", async (_req, res) => {
+  const url = await readFile("url", "utf8").catch(() => "");
   const cookiesPath = path.resolve("cookies/cookies");
   const ytdlpath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
   try {
-    if (!url) {
+    if (!url || url === "") {
       logger.info(`Fetching URL for ${channel}`);
       const stdout = await ytDlpWrap.execPromise([
         "--cookies",
@@ -42,14 +43,18 @@ livesreamRouter.get("/output.m3u8", async (_req, res) => {
 
       const altered = transformInput(stdout);
       const filtered = altered.filter((item) => item.is_live === true);
-      url = filtered?.[0]?.url || "";
+      const tempUrl = filtered?.[0]?.url || "";
+      if (!tempUrl) {
+        logger.info("No live stream found");
+      }
+      await writeFile("url", tempUrl);
     } else {
       logger.info(`URL already fetched (${url}). Skipping`);
     }
 
     const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
     if (!m3u8.trim().endsWith("m3u8")) {
-      url = "";
+      await writeFile("url", "");
     }
 
     const proxy_url = `${env.HLSD_HOST}`;
