@@ -84,7 +84,7 @@ cron.schedule("0 */1 * * *", async () => {
   logger.info("Grabbing show schedule");
   const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
   const data = await raw.text();
-  await writeFile("src/calendar.html", data);
+  await writeFile("public/calendar.html", data);
 });
 
 process.on("SIGINT", onCloseSignal);

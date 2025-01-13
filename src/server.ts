@@ -48,7 +48,7 @@ app.use("/watch", watchRouter);
 app.use(express.static(path.resolve("public")));
 
 app.get("/", async (_req, res) => {
-  return res.sendFile(`${__dirname}/view.html`);
+  return res.sendFile(`${__dirname}/public/view.html`);
 });
 
 // Swagger UI

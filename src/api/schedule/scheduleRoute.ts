@@ -33,7 +33,7 @@ scheduleRegistry.registerPath({
 });
 
 scheduleRouter.get("/", (_req, res) => {
-  const data = parseHtml("src/calendar.html");
+  const data = parseHtml("public/calendar.html");
   if (data) {
     const serviceResponse = ServiceResponse.success("Successfully grab theater schedule!", data);
     return handleServiceResponse(serviceResponse, res);
@@ -43,7 +43,7 @@ scheduleRouter.get("/", (_req, res) => {
 });
 
 scheduleRouter.get("/htmx", (_req, res) => {
-  const data = parseHtml("src/calendar.html");
+  const data = parseHtml("public/calendar.html");
   if (data) {
     const stringData = formatTableData(data);
     const serviceResponse = ServiceResponse.success("Successfully grab theater schedule!", stringData);
