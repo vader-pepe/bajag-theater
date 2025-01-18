@@ -26,7 +26,6 @@ livesreamRouter.get("/output.m3u8", async (_req, res) => {
   const cookiesPath = path.resolve("cookies/cookies");
   const ytdlpath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
-  const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
   let m3u8 = "";
   try {
     if (!url || url === "") {
