@@ -22,48 +22,68 @@ const onCloseSignal = () => {
 };
 
 cron.schedule("* * * * *", async () => {
-  let isDownloading = (await readFile("isDownloading", "utf8").catch(() => "")) === "true";
+  const isDownloading = (await readFile("isDownloading", "utf8").catch(() => "")) === "true";
   let url = await readFile("url", "utf8").catch(() => "");
-
   const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
   const ytdlpath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   const cookiesPath = path.resolve("cookies/cookies");
 
-  if (!url || url === "") {
+  // Fetch URL if not already set in file
+  if (!url) {
     logger.info(`Fetching URL for ${channel}`);
-    const stdout = await ytDlpWrap.execPromise([
-      "--cookies",
-      cookiesPath,
-      "--flat-playlist",
-      "--match-filter",
-      "is_live",
-      channel,
-      "--print-json",
-    ]);
+    try {
+      const stdout = await ytDlpWrap.execPromise([
+        "--cookies",
+        cookiesPath,
+        "--flat-playlist",
+        "--match-filter",
+        "is_live",
+        channel,
+        "--print-json",
+      ]);
 
-    const altered = transformInput(stdout);
-    const filtered = altered.filter((item) => item.is_live === true);
-    const tempUrl = filtered?.[0]?.url || "";
-    if (!tempUrl) {
-      logger.info("No live stream found");
+      const altered = transformInput(stdout);
+      const filtered = altered.filter((item) => item.is_live === true);
+      const tempUrl = filtered?.[0]?.url || "";
+
+      if (!tempUrl) {
+        logger.info("No live stream found");
+      } else {
+        logger.info(`URL found: ${tempUrl}`);
+        await writeFile("url", tempUrl);
+        url = tempUrl; // Update the variable to reflect the new URL
+      }
+    } catch (error) {
+      logger.error("Error fetching live stream URL", error);
     }
-    logger.info(`URL found: ${tempUrl}`);
-    await writeFile("url", tempUrl);
-    url = await readFile("url", "utf8").catch(() => "");
   }
 
-  // check if stream ended
-  let m3u8 = "";
-  if (url || url !== "") {
-    m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
+  // Check if the stream is still live
+  if (url) {
+    try {
+      const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
+
+      // If the stream has ended, clear the URL
+      if (!m3u8.trim().endsWith("m3u8")) {
+        logger.info("Livestream ended. Removing URL");
+        await writeFile("url", "");
+        url = ""; // Reset the in-memory URL
+      }
+    } catch (error) {
+      logger.error("Error checking stream status", error);
+      await writeFile("url", ""); // Clear URL on error
+      url = "";
+    }
   }
-  if (!isDownloading) {
-    logger.info("Downloading stream");
-    await writeFile("isDownloading", "true");
-    isDownloading = (await readFile("isDownloading", "utf8").catch(() => "")) === "true";
-    await ytDlpWrap
-      .execPromise([
+
+  // Download stream if not already downloading and a URL exists
+  if (!isDownloading && url) {
+    logger.info("Starting stream download");
+    await writeFile("isDownloading", "true"); // Mark downloading state
+
+    try {
+      await ytDlpWrap.execPromise([
         "--live-from-start",
         "--cookies",
         cookiesPath,
@@ -72,20 +92,15 @@ cron.schedule("* * * * *", async () => {
         url,
         "-o",
         "video/output.mkv",
-      ])
-      .finally(async () => {
-        await writeFile("isDownloading", "false");
-        await writeFile("url", "");
-      })
-      .catch((error) => {
-        logger.error("Something went wrong");
-        logger.error(error);
-      });
-  }
-  // livestream ended
-  if (!m3u8.trim().endsWith("m3u8")) {
-    logger.info("livestream ended. removing URL");
-    await writeFile("url", "");
+      ]);
+      logger.info("Stream download completed");
+    } catch (error) {
+      logger.error("Error during stream download", error);
+    } finally {
+      // Reset state after completion or error
+      await writeFile("isDownloading", "false");
+      await writeFile("url", "");
+    }
   }
 });
 
