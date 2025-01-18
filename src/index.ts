@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { access, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import cron from "node-cron";
 import YTDlpWrap from "yt-dlp-wrap";
@@ -22,14 +22,40 @@ const onCloseSignal = () => {
 };
 
 cron.schedule("* * * * *", async () => {
+  const cookiesPath = path.resolve("cookies/cookies");
+  const outputPath = "video/output.mkv";
+  const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
+  const ytdlPath = path.resolve(".");
+  const ytDlpWrap = new YTDlpWrap(`${ytdlPath}/yt-dlp`);
+
   const isDownloading = (await readFile("isDownloading", "utf8").catch(() => "")) === "true";
   let url = await readFile("url", "utf8").catch(() => "");
-  const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
-  const ytdlpath = path.resolve(".");
-  const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
-  const cookiesPath = path.resolve("cookies/cookies");
 
-  // Fetch URL if not already set in file
+  // Check if video/output.mkv exists
+  const fileExists = await access(outputPath)
+    .then(() => true)
+    .catch(() => false);
+
+  if (fileExists) {
+    logger.info(`${outputPath} exists. Checking if livestream is ongoing...`);
+    // Check if livestream is still ongoing
+    try {
+      const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
+      if (m3u8.trim().endsWith("m3u8")) {
+        logger.info("Livestream is ongoing. Deleting existing file...");
+        await unlink(outputPath);
+      } else {
+        logger.info("Livestream has ended. Clearing URL.");
+        await writeFile("url", "");
+        return;
+      }
+    } catch (error) {
+      logger.error("Error while checking livestream status:", error);
+      return;
+    }
+  }
+
+  // Fetch URL if not present
   if (!url) {
     logger.info(`Fetching URL for ${channel}`);
     try {
@@ -46,61 +72,53 @@ cron.schedule("* * * * *", async () => {
       const altered = transformInput(stdout);
       const filtered = altered.filter((item) => item.is_live === true);
       const tempUrl = filtered?.[0]?.url || "";
-
       if (!tempUrl) {
         logger.info("No live stream found");
-      } else {
-        logger.info(`URL found: ${tempUrl}`);
-        await writeFile("url", tempUrl);
-        url = tempUrl; // Update the variable to reflect the new URL
+        return;
       }
+      logger.info(`URL found: ${tempUrl}`);
+      await writeFile("url", tempUrl);
+      url = tempUrl;
     } catch (error) {
-      logger.error("Error fetching live stream URL", error);
+      logger.error("Error fetching URL:", error);
+      return;
     }
   }
 
-  // Check if the stream is still live
-  if (url) {
-    try {
-      const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
-
-      // If the stream has ended, clear the URL
-      if (!m3u8.trim().endsWith("m3u8")) {
-        logger.info("Livestream ended. Removing URL");
-        await writeFile("url", "");
-        url = ""; // Reset the in-memory URL
-      }
-    } catch (error) {
-      logger.error("Error checking stream status", error);
-      await writeFile("url", ""); // Clear URL on error
-      url = "";
-    }
-  }
-
-  // Download stream if not already downloading and a URL exists
+  // Start download if not already downloading
   if (!isDownloading && url) {
     logger.info("Starting stream download");
-    await writeFile("isDownloading", "true"); // Mark downloading state
+    await writeFile("isDownloading", "true");
 
-    try {
-      await ytDlpWrap.execPromise([
-        "--live-from-start",
-        "--cookies",
-        cookiesPath,
-        "--merge-output-format",
-        "mkv",
-        url,
-        "-o",
-        "video/output.mkv",
-      ]);
-      logger.info("Stream download completed");
-    } catch (error) {
-      logger.error("Error during stream download", error);
-    } finally {
-      // Reset state after completion or error
-      await writeFile("isDownloading", "false");
-      await writeFile("url", "");
-    }
+    const ytDlpEventEmitter = ytDlpWrap.exec([
+      url,
+      "--live-from-start",
+      "--cookies",
+      cookiesPath,
+      "--merge-output-format",
+      "mkv",
+      "-o",
+      outputPath,
+    ]);
+
+    ytDlpEventEmitter
+      .on("progress", (progress) => {
+        logger.info(`Progress: ${progress.percent}% | Speed: ${progress.currentSpeed} | ETA: ${progress.eta}`);
+      })
+      .on("ytDlpEvent", (eventType, eventData) => {
+        logger.info(`Event: ${eventType} | Data: ${JSON.stringify(eventData)}`);
+      })
+      .on("error", async (error) => {
+        logger.error("Download error occurred", error);
+        await writeFile("isDownloading", "false");
+      })
+      .on("close", async () => {
+        logger.info("Stream download completed or process ended");
+        await writeFile("isDownloading", "false");
+        await writeFile("url", "");
+      });
+
+    logger.info(`Download process started with PID: ${ytDlpEventEmitter?.ytDlpProcess?.pid}`);
   }
 });
 
