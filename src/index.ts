@@ -39,22 +39,24 @@ cron.schedule("* * * * *", async () => {
   if (fileExists) {
     logger.info(`${outputPath} exists. Checking if livestream is ongoing...`);
     // Check if livestream is still ongoing
-    if (url) {
-      try {
-        const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
-        if (m3u8.trim().endsWith("m3u8")) {
-          logger.info("Livestream is ongoing. Deleting existing file...");
-          await unlink(outputPath);
-        } else {
-          logger.info("Livestream has ended. Clearing URL.");
-          await writeFile("url", "");
-          return;
-        }
-      } catch (error) {
-        logger.error("Error while checking livestream status:", error);
-        logger.error(error);
+    if (!url) {
+      logger.error("URL is missing. Skipping livestream status check.");
+      return;
+    }
+
+    try {
+      const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
+      if (m3u8.trim().endsWith("m3u8")) {
+        logger.info("Livestream is ongoing. Deleting existing file...");
+        await unlink(outputPath);
+      } else {
+        logger.info("Livestream has ended. Clearing URL.");
+        await writeFile("url", "");
         return;
       }
+    } catch (error) {
+      logger.error("Error while checking livestream status:", error);
+      return;
     }
   }
 
