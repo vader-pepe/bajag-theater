@@ -22,9 +22,10 @@ const onCloseSignal = () => {
 };
 
 cron.schedule("* * * * *", async () => {
+  let isDownloading = (await readFile("isDownloading", "utf8").catch(() => "")) === "true";
+  let url = await readFile("url", "utf8").catch(() => "");
+
   const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
-  const isDownloading = (await readFile("isDownloading", "utf8").catch(() => "")) === "true";
-  const url = await readFile("url", "utf8").catch(() => "");
   const ytdlpath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   const cookiesPath = path.resolve("cookies/cookies");
@@ -47,45 +48,56 @@ cron.schedule("* * * * *", async () => {
     if (!tempUrl) {
       logger.info("No live stream found");
     }
+    logger.info(`URL found: ${tempUrl}`);
     await writeFile("url", tempUrl);
-    return;
+    url = await readFile("url", "utf8").catch(() => "");
   }
 
   // check if stream ended
-  const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
+  let m3u8 = "";
+  if (url || url !== "") {
+    m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
+  }
+  if (!isDownloading) {
+    logger.info("Downloading stream");
+    await writeFile("isDownloading", "true");
+    isDownloading = (await readFile("isDownloading", "utf8").catch(() => "")) === "true";
+    await ytDlpWrap
+      .execPromise([
+        "--live-from-start",
+        "--cookies",
+        cookiesPath,
+        "--merge-output-format",
+        "mkv",
+        url,
+        "-o",
+        "video/output.mkv",
+      ])
+      .finally(async () => {
+        await writeFile("isDownloading", "false");
+        await writeFile("url", "");
+      })
+      .catch((error) => {
+        logger.error("Something went wrong");
+        logger.error(error);
+      });
+  }
+  // livestream ended
   if (!m3u8.trim().endsWith("m3u8")) {
-    logger.info("Stream ended. trying to download");
+    logger.info("livestream ended. removing URL");
     await writeFile("url", "");
-    if (!isDownloading) {
-      logger.info("Downloading stream");
-      await writeFile("isDownloading", "true");
-      await ytDlpWrap
-        .execPromise([
-          "--live-from-start",
-          "--cookies",
-          cookiesPath,
-          "--merge-output-format",
-          "mkv",
-          url,
-          "-o",
-          "video/output.mkv",
-        ])
-        .catch(async () => {
-          await writeFile("isDownloading", "false");
-        });
-    }
-  } else {
-    logger.info("Stream still running. Skipping");
   }
 });
 
-// cron for every hour
-cron.schedule("0 */1 * * *", async () => {
-  logger.info("Grabbing show schedule");
-  const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
-  const data = await raw.text();
-  await writeFile("public/calendar.html", data);
-});
+setInterval(
+  async () => {
+    logger.info("Grabbing show schedule");
+    const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
+    const data = await raw.text();
+    await writeFile("public/calendar.html", data);
+  },
+  1000 * 60 * 60,
+);
 
 process.on("SIGINT", onCloseSignal);
 process.on("SIGTERM", onCloseSignal);

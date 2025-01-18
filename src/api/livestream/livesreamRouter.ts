@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -7,7 +7,6 @@ import YTDlpWrap from "yt-dlp-wrap";
 import { z } from "zod";
 
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import { transformInput } from "@/common/utils/dataMapping";
 import { env } from "@/common/utils/envConfig";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/server";
@@ -28,46 +27,30 @@ livesreamRouter.get("/output.m3u8", async (_req, res) => {
   const ytdlpath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
+  let m3u8 = "";
   try {
     if (!url || url === "") {
-      logger.info(`Fetching URL for ${channel}`);
-      const stdout = await ytDlpWrap.execPromise([
-        "--cookies",
-        cookiesPath,
-        "--flat-playlist",
-        "--match-filter",
-        "is_live",
-        channel,
-        "--print-json",
-      ]);
-
-      const altered = transformInput(stdout);
-      const filtered = altered.filter((item) => item.is_live === true);
-      const tempUrl = filtered?.[0]?.url || "";
-      if (!tempUrl) {
-        logger.info("No live stream found");
-      }
-      await writeFile("url", tempUrl);
     } else {
       logger.info(`URL already fetched (${url}). Skipping`);
+      m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
+      const proxy_url = `${env.HLSD_HOST}`;
+      const video_url = m3u8;
+      const file_extension = ".m3u8";
+
+      const hls_proxy_url = `${proxy_url}/${btoa(video_url)}${file_extension}`;
+
+      const file = await fetch(hls_proxy_url);
+      const content = await file.text();
+      const serviceResponse = ServiceResponse.success("Success!", content);
+      return handleServiceResponse(serviceResponse, res, true);
     }
 
-    const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
-    if (!m3u8.trim().endsWith("m3u8")) {
-      await writeFile("url", "");
-    }
+    const serviceResponse = ServiceResponse.failure("Something went wrong", null);
+    return handleServiceResponse(serviceResponse, res);
 
-    const proxy_url = `${env.HLSD_HOST}`;
-    const video_url = m3u8;
-    const file_extension = ".m3u8";
-
-    const hls_proxy_url = `${proxy_url}/${btoa(video_url)}${file_extension}`;
-
-    const file = await fetch(hls_proxy_url);
-    const content = await file.text();
-
-    const serviceResponse = ServiceResponse.success("Success!", content);
-    return handleServiceResponse(serviceResponse, res, true);
+    // if (!m3u8.trim().endsWith("m3u8")) {
+    //   await writeFile("url", "");
+    // }
   } catch (error) {
     logger.error(error);
     const serviceResponse = ServiceResponse.failure("Something went wrong", null);
