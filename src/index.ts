@@ -23,7 +23,7 @@ const onCloseSignal = () => {
 
 cron.schedule("* * * * *", async () => {
   const cookiesPath = path.resolve("cookies/cookies");
-  const outputPath = "video/output.mkv";
+  const outputPath = "video/output.%(ext)s";
   const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
   const ytdlPath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlPath}/yt-dlp`);
