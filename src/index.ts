@@ -51,6 +51,7 @@ cron.schedule("* * * * *", async () => {
       }
     } catch (error) {
       logger.error("Error while checking livestream status:", error);
+      logger.error(error);
       return;
     }
   }
