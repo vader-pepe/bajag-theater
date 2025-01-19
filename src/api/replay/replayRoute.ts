@@ -12,6 +12,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { generateLinks } from "@/common/utils/dataMapping";
 import { handleServiceResponse, validateRequest } from "@/common/utils/httpHandlers";
 import { logger } from "@/server";
+import { StatusCodes } from "http-status-codes";
 
 export const replayRegistry = new OpenAPIRegistry();
 export const replayRouter: Router = express.Router();
@@ -93,7 +94,7 @@ replayRouter.get("/play/*", (req, res) => {
     return handleServiceResponse(serviceResponse, res);
   }
 
-  res.writeHead(200, {
+  res.writeHead(StatusCodes.PARTIAL_CONTENT, {
     "Content-Type": "video/mp4",
     "Transfer-Encoding": "chunked",
   });
