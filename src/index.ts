@@ -21,6 +21,36 @@ const onCloseSignal = () => {
   setTimeout(() => process.exit(1), 10000).unref(); // Force shutdown after 10s
 };
 
+async function checkLivestreamStatus(
+  fileExists: boolean,
+  outputPath: string,
+  url: string,
+  cookiesPath: string,
+  ytDlpWrap: YTDlpWrap,
+) {
+  if (fileExists) {
+    logger.info(`${outputPath} exists. Checking if livestream is ongoing...`);
+
+    if (!url) {
+      logger.error("URL is missing. Skipping livestream status check.");
+      return;
+    }
+
+    try {
+      const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
+      if (m3u8.trim().endsWith("m3u8")) {
+        logger.info("Livestream is ongoing. Deleting existing file...");
+        await unlink(outputPath);
+      } else {
+        logger.info("Livestream has ended. Clearing URL.");
+        await writeFile("url", ""); // Now safe to clear the URL
+      }
+    } catch (error) {
+      logger.error("Error while checking livestream status:", error);
+    }
+  }
+}
+
 cron.schedule("* * * * *", async () => {
   const cookiesPath = path.resolve("cookies/cookies");
   const outputPath = "video/output.mkv";
@@ -35,30 +65,6 @@ cron.schedule("* * * * *", async () => {
   const fileExists = await access(outputPath)
     .then(() => true)
     .catch(() => false);
-
-  if (fileExists) {
-    logger.info(`${outputPath} exists. Checking if livestream is ongoing...`);
-    // Check if livestream is still ongoing
-    if (!url) {
-      logger.error("URL is missing. Skipping livestream status check.");
-      return;
-    }
-
-    try {
-      const m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
-      if (m3u8.trim().endsWith("m3u8")) {
-        logger.info("Livestream is ongoing. Deleting existing file...");
-        await unlink(outputPath);
-      } else {
-        logger.info("Livestream has ended. Clearing URL.");
-        await writeFile("url", "");
-        return;
-      }
-    } catch (error) {
-      logger.error("Error while checking livestream status:", error);
-      return;
-    }
-  }
 
   // Fetch URL if not present
   if (!url) {
@@ -120,7 +126,10 @@ cron.schedule("* * * * *", async () => {
       .on("close", async () => {
         logger.info("Stream download completed or process ended");
         await writeFile("isDownloading", "false");
-        await writeFile("url", "");
+
+        // Defer URL wiping for livestream check
+        logger.info("Deferring URL wipe for livestream status check...");
+        await checkLivestreamStatus(fileExists, outputPath, url, cookiesPath, ytDlpWrap);
       });
 
     logger.info(`Download process started with PID: ${ytDlpEventEmitter?.ytDlpProcess?.pid}`);
