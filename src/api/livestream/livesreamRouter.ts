@@ -28,8 +28,7 @@ livesreamRouter.get("/output.m3u8", async (_req, res) => {
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   let m3u8 = "";
   try {
-    if (!url || url === "") {
-    } else {
+    if (url) {
       logger.info(`URL already fetched (${url}). Skipping`);
       m3u8 = await ytDlpWrap.execPromise([url, "-g", "--cookies", cookiesPath]);
       const proxy_url = `${env.HLSD_HOST}`;
@@ -46,10 +45,6 @@ livesreamRouter.get("/output.m3u8", async (_req, res) => {
 
     const serviceResponse = ServiceResponse.failure("Something went wrong", null);
     return handleServiceResponse(serviceResponse, res);
-
-    // if (!m3u8.trim().endsWith("m3u8")) {
-    //   await writeFile("url", "");
-    // }
   } catch (error) {
     logger.error(error);
     const serviceResponse = ServiceResponse.failure("Something went wrong", null);
