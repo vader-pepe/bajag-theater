@@ -92,8 +92,6 @@ cron.schedule("* * * * *", async () => {
       const ytDlpEventEmitter = ytDlpWrap.exec([
         url,
         "--live-from-start",
-        "--limit-rate",
-        "500k",
         "--cookies",
         cookiesPath,
         "--merge-output-format",
