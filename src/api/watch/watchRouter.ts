@@ -23,11 +23,22 @@ const template = (filename: PathLike) => {
 
 <body>
   <section container>
-    <video style="width: 100%; height: 350px;" id="vid1" class="vjs-default-skin" controls>
+    <video id="player" width=500 id="vid1" class="video-js" controls data="{}">
       <source src="/replay/play/${filename}" type="video/mp4">
     </video>
   </section>
   <script src="/js/video.min.js"></script>
+  <script>
+    var player = videojs('player');
+    var raw = fetch('/replay/duration/${filename}').then((raw)=> {
+      raw.json().then(data=> {
+        // TODO: handle seeks
+        player.duration = function() {
+          return data.responseObject; // the amount of seconds of video
+        }
+      })
+    });
+  </script>
 </body>
 
 </html>`;

@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -82,44 +82,67 @@ replayRouter.get("/htmx", validateRequest(GetReplaySchema), async (req, res) => 
   return handleServiceResponse(serviceResponse, res, true);
 });
 
-interface PlayParams {
+interface Params {
   "0": string; // Matches the wildcard in '/play/*'
 }
 
-replayRouter.get("/play/*", (req, res) => {
-  const params = req.params as unknown as PlayParams;
+replayRouter.get("/duration/*", (req, res) => {
+  const params = req.params as unknown as Params;
   const filepath = path.resolve(params[0]);
   if (!existsSync(filepath)) {
     const serviceResponse = ServiceResponse.failure("File does not exist!", null);
     return handleServiceResponse(serviceResponse, res);
   }
 
-  res.writeHead(StatusCodes.PARTIAL_CONTENT, {
-    "Content-Type": "video/mp4",
-    "Transfer-Encoding": "chunked",
+  ffmpeg.ffprobe(filepath, (err, metadata) => {
+    if (err) {
+      const serviceResponse = ServiceResponse.failure("File does not exist!", null);
+      return handleServiceResponse(serviceResponse, res);
+    }
+    const serviceResponse = ServiceResponse.success("Success getting duration", metadata.format.duration);
+    return handleServiceResponse(serviceResponse, res);
   });
+});
+
+replayRouter.get("/play/*", (req, res) => {
+  const params = req.params as unknown as Params;
+  const filepath = path.resolve(params[0]);
+  const stat = statSync(filepath);
+  const fileSize = stat.size;
+  if (!existsSync(filepath)) {
+    const serviceResponse = ServiceResponse.failure("File does not exist!", null);
+    return handleServiceResponse(serviceResponse, res);
+  }
+
+  const headers = {
+    "Content-Type": "video/mp4",
+    "Content-Length": fileSize,
+    "Accept-Ranges": "bytes",
+  };
+
+  res.writeHead(StatusCodes.PARTIAL_CONTENT, headers);
 
   ffmpeg(filepath)
+    .videoCodec("h264_vaapi")
+    .addOption("-threads", "1") // Single-threaded processing
+    .addOption("-vaapi_device", "/dev/dri/renderD128") // VA-API device
+    .videoFilter("format=nv12|vaapi,hwupload") // Video filter for VA-API
     .outputOptions([
-      "-movflags frag_keyframe+empty_moov", // Enables fragmented MP4 for streaming
-      "-c:v libx264", // Video codec
-      "-preset ultrafast", // Faster encoding
-      "-c:a aac", // Audio codec
-      "-b:v 1000k", // Video bitrate
-      "-b:a 128k", // Audio bitrate
+      "-movflags frag_keyframe+empty_moov", // Fragmented MP4 for streaming
     ])
-    .audioFilters("volume=2")
-    .format("mp4") // Set output format
+    .audioFilters("volume=2") // Example audio filter
+    .format("mp4") // Set output format to MP4
     .on("error", (err) => {
-      logger.error("FFmpeg error:", err.message);
+      logger.error("FFmpeg error:");
+      logger.error(err);
       if (!res.headersSent) {
-        const serviceResponse = ServiceResponse.failure("Failed!", null);
+        const serviceResponse = ServiceResponse.failure("Error while processing!", null);
         return handleServiceResponse(serviceResponse, res);
       }
     })
     .on("end", () => {
       logger.info("Streaming finished");
-      return res.end(); // Ensure the response ends properly
+      res.end(); // Ensure response ends
     })
-    .pipe(res, { end: true }); // Stream the output to the response
+    .pipe(res, { end: true });
 });

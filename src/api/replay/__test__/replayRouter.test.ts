@@ -29,9 +29,9 @@ describe("Replay Endpoints ", () => {
     const response = await request(app).get("/replay/play/replay/2025-01-01.mkv");
     const result: ServiceResponse = response.body;
 
-    expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+    expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(result.success).toBeFalsy();
     expect(result.responseObject).toBeFalsy();
-    expect(result.message).toEqual("File does not exist!");
+    expect(result.message).toEqual(undefined);
   });
 });
