@@ -21,6 +21,41 @@ const onCloseSignal = () => {
   setTimeout(() => process.exit(1), 10000).unref(); // Force shutdown after 10s
 };
 
+async function getLatestYTDlpVersion() {
+  const raw = await fetch("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest");
+  const json = await raw.json();
+  return json?.tag_name as string;
+}
+
+async function ensureLatestYTDlp() {
+  const localVersion = await getLocalYTDlpVersion();
+  const latestVersion = await getLatestYTDlpVersion();
+
+  if (!latestVersion) {
+    logger.warn("Unable to fetch the latest yt-dlp version. Skipping update check.");
+    return;
+  }
+
+  if (localVersion.trim() !== latestVersion.trim()) {
+    logger.info(`Updating yt-dlp: Local version (${localVersion}) != Latest version (${latestVersion})`);
+    try {
+      await YTDlpWrap.downloadFromGithub();
+      logger.info("yt-dlp has been updated to the latest version.");
+    } catch (error) {
+      logger.error("Error updating yt-dlp:", error);
+    }
+  } else {
+    logger.info("yt-dlp is already up-to-date.");
+  }
+}
+
+async function getLocalYTDlpVersion() {
+  const ytdlPath = path.resolve(".");
+  const ytDlpWrap = new YTDlpWrap(`${ytdlPath}/yt-dlp`);
+  const version = await ytDlpWrap.execPromise(["--version"]);
+  return version;
+}
+
 cron.schedule("* * * * *", async () => {
   const cookiesPath = path.resolve("cookies/cookies");
   const outputPath = "video/output.mkv";
@@ -31,6 +66,7 @@ cron.schedule("* * * * *", async () => {
   const isDownloading = (await readFile("isDownloading", "utf8").catch(() => "")) === "true";
   let url = await readFile("url", "utf8").catch(() => "");
 
+  await ensureLatestYTDlp();
   const checkLivestreamStatus = async (url: string, cookiesPath: string, ytDlpWrap: YTDlpWrap): Promise<boolean> => {
     if (!url) {
       logger.error("URL is missing. Skipping livestream status check.");
