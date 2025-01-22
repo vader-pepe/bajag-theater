@@ -1,11 +1,13 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import ffmpeg from "fluent-ffmpeg";
 import cron from "node-cron";
 import YTDlpWrap from "yt-dlp-wrap";
 
 import { transformInput } from "@/common/utils/dataMapping";
 import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
+import { getFormattedDate } from "./common/utils/date";
 
 const { NODE_ENV, HOST, PORT } = env;
 const server = app.listen(env.PORT, () => {
@@ -58,7 +60,9 @@ async function getLocalYTDlpVersion() {
 
 cron.schedule("* * * * *", async () => {
   const cookiesPath = path.resolve("cookies/cookies");
-  const outputPath = "video/output.mkv";
+  const date = getFormattedDate();
+  const mkvOutput = `${date}.mkv`;
+  const mp4Output = `${date}.mp4`;
   const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
   const ytdlPath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlPath}/yt-dlp`);
@@ -133,7 +137,7 @@ cron.schedule("* * * * *", async () => {
         "--merge-output-format",
         "mkv",
         "-o",
-        outputPath,
+        mkvOutput,
       ]);
 
       ytDlpEventEmitter
@@ -154,6 +158,19 @@ cron.schedule("* * * * *", async () => {
           // Clear URL after successful download
           logger.info("Clearing URL after successful download...");
           await writeFile("url", "");
+
+          ffmpeg(mkvOutput)
+            .output(mp4Output)
+            .on("progress", (progress) => {
+              logger.info(`Processing: ${progress.percent?.toFixed(2)}% done`);
+            })
+            .on("end", () => {
+              logger.info("Conversion complete");
+            })
+            .on("error", (err) => {
+              logger.error(err);
+            })
+            .run();
         });
 
       logger.info(`Download process started with PID: ${ytDlpEventEmitter?.ytDlpProcess?.pid}`);

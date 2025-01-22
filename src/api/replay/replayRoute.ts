@@ -1,4 +1,4 @@
-import { existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, statSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -11,9 +11,7 @@ import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { GetReplaySchema } from "@/api/replay/replayModel";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { generateLinks } from "@/common/utils/dataMapping";
-import { env } from "@/common/utils/envConfig";
 import { handleServiceResponse, validateRequest } from "@/common/utils/httpHandlers";
-import { logger } from "@/server";
 
 export const replayRegistry = new OpenAPIRegistry();
 export const replayRouter: Router = express.Router();
@@ -108,71 +106,33 @@ replayRouter.get("/duration/*", (req, res) => {
 replayRouter.get("/play/*", (req, res) => {
   const params = req.params as unknown as Params;
   const filepath = path.resolve(params[0]);
-  const stat = statSync(filepath);
-  const fileSize = stat.size;
+  const range = req.headers.range;
+  const videoSize = statSync(filepath).size;
+
+  if (!range) {
+    const serviceResponse = ServiceResponse.failure("Need range!", null);
+    return handleServiceResponse(serviceResponse, res);
+  }
+
   if (!existsSync(filepath)) {
     const serviceResponse = ServiceResponse.failure("File does not exist!", null);
     return handleServiceResponse(serviceResponse, res);
   }
 
+  const CHUNK_SIZE = 10 ** 6;
+  const start = Number(range.replace(/\D/g, ""));
+  const end = Math.min(start + CHUNK_SIZE, videoSize - 1);
+  const contentLength = end - start + 1;
+
   const headers = {
-    "Content-Type": "video/mp4",
-    "Content-Length": fileSize,
+    "Content-Range": `bytes ${start}-${end}/${videoSize}`,
     "Accept-Ranges": "bytes",
+    "Content-Length": contentLength,
+    "Content-Type": "video/mp4",
   };
 
   res.writeHead(StatusCodes.PARTIAL_CONTENT, headers);
 
-  if (env.isProd) {
-    ffmpeg(filepath)
-      .videoCodec("libx264") // Use software encoder (H.264 with libx264)
-      .addOption("-threads", "1") // Single-threaded processing
-      .addOption("-hwaccel", "cuda") // Use CUDA for hardware acceleration during decoding
-      .addOption("-hwaccel_output_format", "cuda") // Specify CUDA output format
-      .outputOptions([
-        "-preset",
-        "medium", // Encoding speed/quality tradeoff
-        "-movflags",
-        "frag_keyframe+empty_moov", // Fragmented MP4 for streaming
-      ])
-      .audioFilters("volume=2") // Example audio filter
-      .format("mp4") // Set output format to MP4
-      .on("error", (err) => {
-        logger.error("FFmpeg error:");
-        logger.error(err);
-        if (!res.headersSent) {
-          const serviceResponse = ServiceResponse.failure("Error while processing!", null);
-          return handleServiceResponse(serviceResponse, res);
-        }
-      })
-      .on("end", () => {
-        logger.info("Streaming finished");
-        res.end(); // Ensure response ends
-      })
-      .pipe(res, { end: true });
-  } else {
-    ffmpeg(filepath)
-      .videoCodec("h264_vaapi")
-      .addOption("-threads", "1") // Single-threaded processing
-      .addOption("-vaapi_device", "/dev/dri/renderD128") // VA-API device
-      .videoFilter("format=nv12|vaapi,hwupload") // Video filter for VA-API
-      .outputOptions([
-        "-movflags frag_keyframe+empty_moov", // Fragmented MP4 for streaming
-      ])
-      .audioFilters("volume=2") // Example audio filter
-      .format("mp4") // Set output format to MP4
-      .on("error", (err) => {
-        logger.error("FFmpeg error:");
-        logger.error(err);
-        if (!res.headersSent) {
-          const serviceResponse = ServiceResponse.failure("Error while processing!", null);
-          return handleServiceResponse(serviceResponse, res);
-        }
-      })
-      .on("end", () => {
-        logger.info("Streaming finished");
-        res.end(); // Ensure response ends
-      })
-      .pipe(res, { end: true });
-  }
+  const videoStream = createReadStream(filepath, { start, end });
+  videoStream.pipe(res);
 });
