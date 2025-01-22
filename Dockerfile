@@ -17,27 +17,29 @@ RUN npm install --omit=dev
 RUN npm run build
 
 # Stage 2: Runtime stage
-FROM willprice/nvidia-ffmpeg
+FROM python:3.11-alpine
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Install required packages for yt-dlp and Node.js runtime
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
+    ffmpeg \
     curl \
     bash \
     nodejs \
-    npm && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    npm
+
+# Install yt-dlp
+RUN pip install --no-cache-dir yt-dlp
 
 # Copy the application from the build stage
 WORKDIR /app
 COPY --from=build /app /app
 
 # Install production dependencies
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Expose application port (adjust as per your app)
 EXPOSE 8080
