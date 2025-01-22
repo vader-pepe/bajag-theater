@@ -37,7 +37,7 @@ WORKDIR /app
 COPY --from=build /app /app
 
 # Install production dependencies
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Expose application port (adjust as per your app)
 EXPOSE 8080
