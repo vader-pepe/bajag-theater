@@ -4,15 +4,16 @@ import path from "node:path";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import ffmpeg from "fluent-ffmpeg";
+import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { GetReplaySchema } from "@/api/replay/replayModel";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { generateLinks } from "@/common/utils/dataMapping";
+import { env } from "@/common/utils/envConfig";
 import { handleServiceResponse, validateRequest } from "@/common/utils/httpHandlers";
 import { logger } from "@/server";
-import { StatusCodes } from "http-status-codes";
 
 export const replayRegistry = new OpenAPIRegistry();
 export const replayRouter: Router = express.Router();
@@ -122,27 +123,56 @@ replayRouter.get("/play/*", (req, res) => {
 
   res.writeHead(StatusCodes.PARTIAL_CONTENT, headers);
 
-  ffmpeg(filepath)
-    .videoCodec("h264_vaapi")
-    .addOption("-threads", "1") // Single-threaded processing
-    .addOption("-vaapi_device", "/dev/dri/renderD128") // VA-API device
-    .videoFilter("format=nv12|vaapi,hwupload") // Video filter for VA-API
-    .outputOptions([
-      "-movflags frag_keyframe+empty_moov", // Fragmented MP4 for streaming
-    ])
-    .audioFilters("volume=2") // Example audio filter
-    .format("mp4") // Set output format to MP4
-    .on("error", (err) => {
-      logger.error("FFmpeg error:");
-      logger.error(err);
-      if (!res.headersSent) {
-        const serviceResponse = ServiceResponse.failure("Error while processing!", null);
-        return handleServiceResponse(serviceResponse, res);
-      }
-    })
-    .on("end", () => {
-      logger.info("Streaming finished");
-      res.end(); // Ensure response ends
-    })
-    .pipe(res, { end: true });
+  if (env.isProd) {
+    ffmpeg(filepath)
+      .videoCodec("libx264") // Use software encoder (H.264 with libx264)
+      .addOption("-threads", "1") // Single-threaded processing
+      .addOption("-hwaccel", "cuda") // Use CUDA for hardware acceleration during decoding
+      .addOption("-hwaccel_output_format", "cuda") // Specify CUDA output format
+      .outputOptions([
+        "-preset",
+        "medium", // Encoding speed/quality tradeoff
+        "-movflags",
+        "frag_keyframe+empty_moov", // Fragmented MP4 for streaming
+      ])
+      .audioFilters("volume=2") // Example audio filter
+      .format("mp4") // Set output format to MP4
+      .on("error", (err) => {
+        logger.error("FFmpeg error:");
+        logger.error(err);
+        if (!res.headersSent) {
+          const serviceResponse = ServiceResponse.failure("Error while processing!", null);
+          return handleServiceResponse(serviceResponse, res);
+        }
+      })
+      .on("end", () => {
+        logger.info("Streaming finished");
+        res.end(); // Ensure response ends
+      })
+      .pipe(res, { end: true });
+  } else {
+    ffmpeg(filepath)
+      .videoCodec("h264_vaapi")
+      .addOption("-threads", "1") // Single-threaded processing
+      .addOption("-vaapi_device", "/dev/dri/renderD128") // VA-API device
+      .videoFilter("format=nv12|vaapi,hwupload") // Video filter for VA-API
+      .outputOptions([
+        "-movflags frag_keyframe+empty_moov", // Fragmented MP4 for streaming
+      ])
+      .audioFilters("volume=2") // Example audio filter
+      .format("mp4") // Set output format to MP4
+      .on("error", (err) => {
+        logger.error("FFmpeg error:");
+        logger.error(err);
+        if (!res.headersSent) {
+          const serviceResponse = ServiceResponse.failure("Error while processing!", null);
+          return handleServiceResponse(serviceResponse, res);
+        }
+      })
+      .on("end", () => {
+        logger.info("Streaming finished");
+        res.end(); // Ensure response ends
+      })
+      .pipe(res, { end: true });
+  }
 });
