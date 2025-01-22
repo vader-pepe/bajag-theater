@@ -17,19 +17,20 @@ RUN npm install --omit=dev
 RUN npm run build
 
 # Stage 2: Runtime stage
-FROM python:3.11-alpine
+FROM willprice/nvidia-ffmpeg
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Install required packages for yt-dlp and Node.js runtime
-RUN apk add --no-cache \
-    ffmpeg \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     bash \
     nodejs \
-    npm
+    npm && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the application from the build stage
 WORKDIR /app
