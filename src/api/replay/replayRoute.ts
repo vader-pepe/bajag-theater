@@ -106,13 +106,8 @@ replayRouter.get("/duration/*", (req, res) => {
 replayRouter.get("/play/*", (req, res) => {
   const params = req.params as unknown as Params;
   const filepath = path.resolve(params[0]);
-  const range = req.headers.range;
   const videoSize = statSync(filepath).size;
-
-  if (!range) {
-    const serviceResponse = ServiceResponse.failure("Need range!", null);
-    return handleServiceResponse(serviceResponse, res);
-  }
+  const range = req.headers.range || `bytes=0-${Math.min(10 ** 6 - 1, videoSize - 1)}`;
 
   if (!existsSync(filepath)) {
     const serviceResponse = ServiceResponse.failure("File does not exist!", null);
