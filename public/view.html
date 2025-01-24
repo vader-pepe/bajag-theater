@@ -52,20 +52,7 @@
   </section>
 
   <section container>
-    <h3>Replay</h3>
-    <form>
-      <div>
-        <div style="margin: 1em 0;">
-          <label for="input">Cari disini</label>
-          <input hx-vals='js:{date: document.querySelector("input").value || undefined}' hx-target="#replays"
-            hx-trigger="input changed delay:500ms, keyup[key=='Enter'], load" hx-get="/replay/htmx" type="date"
-            placeholder="Tanggal...">
-        </div>
-
-        <div id="replays" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-        </div>
-      </div>
-    </form>
+    <h3>Replay. Pindah kesini ya --> <a href="https://replay.sankl.my.id">Replay</a></h3>
   </section>
 
   <script src="/js/video.min.js"></script>
