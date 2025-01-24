@@ -159,18 +159,18 @@ cron.schedule("* * * * *", async () => {
           logger.info("Clearing URL after successful download...");
           await writeFile("url", "");
 
-          ffmpeg(mkvOutput)
-            .output(mp4Output)
-            .on("progress", (progress) => {
-              logger.info(`Processing: ${progress.percent?.toFixed(2)}% done`);
-            })
-            .on("end", () => {
-              logger.info("Conversion complete");
-            })
-            .on("error", (err) => {
-              logger.error(err);
-            })
-            .run();
+          // ffmpeg(mkvOutput)
+          //   .output(mp4Output)
+          //   .on("progress", (progress) => {
+          //     logger.info(`Processing: ${progress.percent?.toFixed(2)}% done`);
+          //   })
+          //   .on("end", () => {
+          //     logger.info("Conversion complete");
+          //   })
+          //   .on("error", (err) => {
+          //     logger.error(err);
+          //   })
+          //   .run();
         });
 
       logger.info(`Download process started with PID: ${ytDlpEventEmitter?.ytDlpProcess?.pid}`);
