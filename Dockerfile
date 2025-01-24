@@ -1,50 +1,38 @@
-# Stage 1: Build stage
-FROM node:20-slim AS build
+# Stage 1: Build Stage
+FROM node:18-alpine AS builder
 
-# Set the working directory
+# Install build tools for native modules (if needed)
+RUN apk add --no-cache python3 make g++
+
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json first to utilize Docker cache
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --omit=dev
+RUN npm install --production
 
-# Copy only necessary source files
+# Copy application files
 COPY . .
 
-# Build the application (if needed)
-RUN npm run build
+# Stage 2: Final Stage
+FROM alpine:3.18 AS runner
 
-# Stage 2: Runtime stage
-FROM python:3.11-slim
+# Install yt-dlp and any runtime dependencies
+RUN apk add --no-cache yt-dlp ffmpeg nodejs npm
+
+# Set working directory
+WORKDIR /app
+
+# Copy necessary files from the build stage
+COPY --from=builder /app /app
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+ENV NODE_ENV=production
 
-# Install required system packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    curl \
-    bash && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Expose the application's port
+EXPOSE 3000
 
-# Install yt-dlp
-RUN pip install --no-cache-dir yt-dlp
-
-# Copy built application from build stage
-WORKDIR /app
-COPY --from=build /app/dist /app/dist
-COPY --from=build /app/package*.json /app/
-
-# Install only production dependencies
-RUN npm ci --omit=dev --only=production && \
-    rm -rf /tmp/* /root/.npm
-
-# Expose application port (adjust as per your app)
-EXPOSE 8080
-
-# Default command
-CMD ["node", "dist"]
+# Command to run your application
+CMD ["node", "dist/index.js"]
