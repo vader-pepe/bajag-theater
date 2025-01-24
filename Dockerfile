@@ -1,45 +1,47 @@
 # Stage 1: Build stage
-FROM node:20-alpine AS build
+FROM node:20-slim AS build
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the rest of the application code
-COPY . .
-
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json first to utilize Docker cache
 COPY package*.json ./
 
-# Install Node.js dependencies
+# Install dependencies
 RUN npm install --omit=dev
+
+# Copy only necessary source files
+COPY . .
 
 # Build the application (if needed)
 RUN npm run build
 
 # Stage 2: Runtime stage
-FROM python:3.11-alpine
+FROM python:3.11-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Install required packages for yt-dlp and Node.js runtime
-RUN apk add --no-cache \
+# Install required system packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     curl \
-    bash \
-    nodejs \
-    npm
+    bash && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install yt-dlp
 RUN pip install --no-cache-dir yt-dlp
 
-# Copy the application from the build stage
+# Copy built application from build stage
 WORKDIR /app
-COPY --from=build /app /app
+COPY --from=build /app/dist /app/dist
+COPY --from=build /app/package*.json /app/
 
-# Install production dependencies
-RUN npm ci --omit=dev
+# Install only production dependencies
+RUN npm ci --omit=dev --only=production && \
+    rm -rf /tmp/* /root/.npm
 
 # Expose application port (adjust as per your app)
 EXPOSE 8080
