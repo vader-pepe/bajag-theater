@@ -61,8 +61,8 @@ async function getLocalYTDlpVersion() {
 cron.schedule("* * * * *", async () => {
   const cookiesPath = path.resolve("cookies/cookies");
   const date = getFormattedDate();
-  const mkvOutput = `${date}.mkv`;
-  const mp4Output = `${date}.mp4`;
+  const mkvOutput = `video/${date}.mkv`;
+  const mp4Output = `video/${date}.mp4`;
   const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
   const ytdlPath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlPath}/yt-dlp`);
