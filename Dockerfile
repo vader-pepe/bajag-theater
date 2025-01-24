@@ -1,40 +1,48 @@
-# Stage 1: Build Stage
-FROM node:18-alpine AS builder
+# Stage 1: Build stage
+FROM node:20-alpine AS build
 
-# Install build tools for native modules (if needed)
-RUN apk add --no-cache python3 make g++
-
-# Set working directory
+# Set the working directory
 WORKDIR /app
+
+# Copy the rest of the application code
+COPY . .
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
+# Install Node.js dependencies
 RUN npm install --omit=dev
 
-# Copy application files
-COPY . .
+# Build the application (if needed)
+RUN npm run build
 
-# Stage 2: Final Stage
-FROM alpine:3.18 AS runner
-
-# Install yt-dlp and any runtime dependencies
-RUN apk add --no-cache yt-dlp ffmpeg nodejs npm
-
-# Set working directory
-WORKDIR /app
-
-# Copy necessary files from the build stage
-COPY --from=builder /app /app
-
-RUN npm ci --omit=dev
+# Stage 2: Runtime stage
+FROM python:3.11-alpine
 
 # Set environment variables
-ENV NODE_ENV=production
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Expose the application's port
-EXPOSE 3000
+# Install required packages for yt-dlp and Node.js runtime
+RUN apk add --no-cache \
+    ffmpeg \
+    curl \
+    bash \
+    nodejs \
+    npm
 
-# Command to run your application
-CMD ["node", "dist/index.js"]
+# Install yt-dlp
+RUN pip install --no-cache-dir yt-dlp
+
+# Copy the application from the build stage
+WORKDIR /app
+COPY --from=build /app /app
+
+# Install production dependencies
+RUN npm ci --omit=dev
+
+# Expose application port (adjust as per your app)
+EXPOSE 8080
+
+# Default command
+CMD ["node", "dist"]
