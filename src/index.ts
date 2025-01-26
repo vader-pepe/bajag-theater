@@ -71,7 +71,7 @@ cron.schedule("* * * * *", async () => {
   let url = await readFile("url", "utf8").catch(() => "");
 
   await ensureLatestYTDlp();
-  const isLiveStreamEnded = async (url: string, cookiesPath: string, ytDlpWrap: YTDlpWrap): Promise<boolean> => {
+  const checkLivestream = async (url: string, cookiesPath: string, ytDlpWrap: YTDlpWrap): Promise<boolean> => {
     if (!url) {
       logger.error("URL is missing. Skipping livestream status check.");
       return false;
@@ -79,7 +79,7 @@ cron.schedule("* * * * *", async () => {
 
     try {
       const live_status = await ytDlpWrap.execPromise(["--print", "is_live", "--cookies", cookiesPath, url]);
-      return live_status === "False";
+      return live_status.trim() === "True"; // true if livestream is ongoing
     } catch (error) {
       logger.error("Error while checking livestream status:");
       logger.error(error);
@@ -119,7 +119,7 @@ cron.schedule("* * * * *", async () => {
   }
 
   // Check if livestream is ongoing
-  const livestreamOngoing = await isLiveStreamEnded(url, cookiesPath, ytDlpWrap);
+  const livestreamOngoing = await checkLivestream(url, cookiesPath, ytDlpWrap);
 
   if (!livestreamOngoing) {
     logger.info("Livestream has ended. Starting download...");
