@@ -1,15 +1,4 @@
-version: '3.8'
-
 services:
-  hlsd:
-    container_name: hlsd-container
-    image: hls-proxy:latest # Replace with the name of the Docker image for hlsd
-    build:
-      dockerfile: Dockerfile-hlsd
-    ports:
-      - "8080:80"
-    restart: always
-
   bajag-theater:
     container_name: theater-container
     image: theater:latest # Replace with the name of the Docker image for the Express app
@@ -17,10 +6,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    depends_on:
-      - hlsd
     volumes:
-      - /media/replay:/app/replay
+      - ${REPLAY_DIR}:/app/replay
       - ${PWD}/cookies:/app/cookies
       - ${PWD}/video:/app/video
     env_file:
