@@ -1,4 +1,4 @@
-@import "tailwindcss" source(none);
+@import "tailwindcss" source("../../public");
 
 @source "/public/*.{html}";
 @plugin "daisyui";

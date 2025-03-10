@@ -8,7 +8,7 @@
   "main": "index.ts",
   "private": true,
   "scripts": {
-    "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
+    "dev": "pnpm run build:css && tsx watch --clear-screen=false src/index.ts | pino-pretty",
     "build": "tsup --loader '.html=text'",
     "start": "node dist/index.js",
     "clean": "rimraf dist coverage",
@@ -16,12 +16,14 @@
     "lint:fix": "biome check src/ --fix",
     "format": "biome format src/",
     "test": "vitest run",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:css": "pnpm dlx @tailwindcss/cli -i public/css/style.css -o public/css/output.css"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.0.0",
-    "@warren-bank/hls-proxy": "^3.5.4",
+    "@tailwindcss/cli": "^4.0.12",
     "cors": "^2.8.5",
+    "daisyui": "^5.0.0",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
     "express": "^4.19.2",
@@ -35,6 +37,7 @@
     "pino": "^9.4.0",
     "pino-http": "^10.0.0",
     "swagger-ui-express": "^5.0.0",
+    "tailwindcss": "^4.0.12",
     "tsup": "^8.0.2",
     "yt-dlp-wrap": "^2.3.12",
     "zod": "^3.22.4"
@@ -60,16 +63,10 @@
     "vitest": "^2.0.0"
   },
   "lint-staged": {
-    "*.{js,ts,cjs,mjs,d.cts,d.mts,json,jsonc}": [
-      "biome check --apply --no-errors-on-unmatched"
-    ]
+    "*.{js,ts,cjs,mjs,d.cts,d.mts,json,jsonc}": ["biome check --apply --no-errors-on-unmatched"]
   },
   "tsup": {
-    "entry": [
-      "src",
-      "!src/**/__tests__/**",
-      "!src/**/*.test.*"
-    ],
+    "entry": ["src", "!src/**/__tests__/**", "!src/**/*.test.*"],
     "splitting": false,
     "sourcemap": true,
     "clean": true

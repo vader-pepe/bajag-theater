@@ -1,6 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import ffmpeg from "fluent-ffmpeg";
 import cron from "node-cron";
 import YTDlpWrap from "yt-dlp-wrap";
 
@@ -62,7 +61,6 @@ cron.schedule("* * * * *", async () => {
   const cookiesPath = path.resolve("cookies/cookies");
   const date = getFormattedDate();
   const mkvOutput = `video/${date}.mkv`;
-  const mp4Output = `video/${date}.mp4`;
   const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
   const ytdlPath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlPath}/yt-dlp`);
@@ -121,26 +119,27 @@ cron.schedule("* * * * *", async () => {
   // Check if livestream is ongoing
   const livestreamOngoing = await checkLivestream(url, cookiesPath, ytDlpWrap);
 
-  if (!livestreamOngoing) {
-    logger.info("Livestream has ended. Starting download...");
+  if (livestreamOngoing) {
+    logger.info(`Livestream found. ${isDownloading ? "Download process already started" : "Downloading"}`);
 
     // Start download if not already downloading
     if (!isDownloading) {
       logger.info("Starting stream download");
       await writeFile("isDownloading", "true");
 
-      const ytDlpEventEmitter = ytDlpWrap.exec([
+      const video = ytDlpWrap.exec([
         url,
-        "--live-from-start",
         "--cookies",
         cookiesPath,
         "--merge-output-format",
         "mkv",
+        "--postprocessor-args",
+        "-c:a aac -b:a 128k",
         "-o",
         mkvOutput,
       ]);
 
-      ytDlpEventEmitter
+      video
         .on("progress", (progress) => {
           logger.info(`Progress: ${progress.percent}% | Speed: ${progress.currentSpeed} | ETA: ${progress.eta}`);
         })
@@ -158,37 +157,14 @@ cron.schedule("* * * * *", async () => {
           // Clear URL after successful download
           logger.info("Clearing URL after successful download...");
           await writeFile("url", "");
-
-          // ffmpeg(mkvOutput)
-          //   .output(mp4Output)
-          //   .on("progress", (progress) => {
-          //     logger.info(`Processing: ${progress.percent?.toFixed(2)}% done`);
-          //   })
-          //   .on("end", () => {
-          //     logger.info("Conversion complete");
-          //   })
-          //   .on("error", (err) => {
-          //     logger.error(err);
-          //   })
-          //   .run();
         });
 
-      logger.info(`Download process started with PID: ${ytDlpEventEmitter?.ytDlpProcess?.pid}`);
+      logger.info(`Download process started with PID: ${video?.ytDlpProcess?.pid}`);
     }
   } else {
-    logger.info("Livestream is ongoing. Waiting for it to end...");
+    logger.info("Livestream is ended.");
   }
 });
-
-setInterval(
-  async () => {
-    logger.info("Grabbing show schedule");
-    const raw = await fetch("https://jkt48.com/calendar/list?lang=id");
-    const data = await raw.text();
-    await writeFile("public/calendar.html", data);
-  },
-  1000 * 60 * 60,
-);
 
 process.on("SIGINT", onCloseSignal);
 process.on("SIGTERM", onCloseSignal);

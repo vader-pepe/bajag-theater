@@ -77,21 +77,18 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
           "-movflags frag_keyframe+empty_moov",
         ])
         .outputFormat("mp4")
-        .on("error", (err) => console.log(err))
+        .on("error", (err) => logger.error(err))
         .pipe(res, { end: true });
     } else if (env.HW_ACCEL === "NVENC") {
       return ffmpeg(readableStream)
+        .inputOptions(["-hwaccel cuda", "-hwaccel_output_format cuda"])
         .outputOptions([
+          "-vf format=nv12,hwupload_cuda",
+          "-c:v h264_nvenc", // Use NVENC encoder.
           "-movflags frag_keyframe+empty_moov",
-          "-init_hw_device cuda=cu:0", // Initialize CUDA device "cu" on GPU 0.
-          "-filter_hw_device cu", // Use the CUDA device for hardware filters.
-          "-hwaccel cuda", // Enable CUDA hardware acceleration.
-          "-hwaccel_output_format cuda", // Set hardware accelerated output format.
-          "-noautorotate", // Disable automatic rotation.
-          "-hwaccel_flags +unsafe_output", // Allow unsafe output if needed.
         ])
         .outputFormat("mp4")
-        .on("error", (err) => console.log(err))
+        .on("error", (err) => logger.error(err))
         .pipe(res, { end: true });
     }
   }

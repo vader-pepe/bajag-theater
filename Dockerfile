@@ -10,11 +10,13 @@ COPY . .
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
+RUN npm i -g pnpm
+
 # Install Node.js dependencies
-RUN npm install --omit=dev
+RUN pnpm install --omit=dev
 
 # Build the application (if needed)
-RUN npm run build
+RUN pnpm run build
 
 # Stage 2: Runtime stage
 FROM python:3.11-alpine
@@ -39,7 +41,7 @@ WORKDIR /app
 COPY --from=build /app /app
 
 # Install production dependencies
-RUN npm ci --omit=dev
+RUN pnpm ci --omit=dev
 
 # Expose application port (adjust as per your app)
 EXPOSE 8080
