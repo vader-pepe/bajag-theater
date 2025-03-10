@@ -4,6 +4,7 @@ services:
     image: theater:latest # Replace with the name of the Docker image for the Express app
     build:
       dockerfile: Dockerfile
+    gpus: all
     ports:
       - "${PORT}:3000"
     volumes:
