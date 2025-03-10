@@ -88,8 +88,10 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
           "-c:v h264_vaapi", // Use VAAPI encoder.
           "-movflags frag_keyframe+empty_moov",
         ])
-        .outputFormat("mp4")
+        .on("start", (cmd) => logger.info(`command: ${cmd}`))
+        .on("progress", (prg) => logger.info(`frames: ${prg.frames}`))
         .on("error", (err) => logger.error(err))
+        .outputFormat("mp4")
         .pipe(res, { end: true });
     } else if (env.HW_ACCEL === "NVENC") {
       return ffmpeg(readableStream)

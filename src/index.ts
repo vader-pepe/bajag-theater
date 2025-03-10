@@ -122,7 +122,7 @@ setInterval(async () => {
     logger.info(`Livestream found. ${isDownloading ? "Download process already started" : "Downloading"}`);
 
     // Start download if not already downloading
-    if (!isDownloading) {
+    if (!isDownloading && env.ALLOW_DOWNLOAD) {
       logger.info("Starting stream download");
       await writeFile("isDownloading", "true");
 
@@ -164,7 +164,6 @@ setInterval(async () => {
   } else {
     logger.info("Livestream is ended.");
   }
-
 }, 60 * 1000);
 
 process.on("SIGINT", onCloseSignal);
