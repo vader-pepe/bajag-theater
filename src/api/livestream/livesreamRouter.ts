@@ -80,6 +80,7 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
     res.setHeader("Content-Type", "video/mp4");
     const readableStream = ytDlpWrap.execStream([url, "--cookies", cookiesPath]);
 
+    ffmpeg.setFfmpegPath(env.FFMPEG_PATH);
     if (env.HW_ACCEL === "VAAPI") {
       return ffmpeg(readableStream)
         .inputOptions(["-hwaccel vaapi", "-vaapi_device /dev/dri/renderD128"])
@@ -94,6 +95,7 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
         .outputFormat("mp4")
         .pipe(res, { end: true });
     } else if (env.HW_ACCEL === "NVENC") {
+      // TODO: not working
       return ffmpeg(readableStream)
         .inputOptions(["-hwaccel cuda", "-hwaccel_output_format cuda"])
         .outputOptions([

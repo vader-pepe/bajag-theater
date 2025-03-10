@@ -39,4 +39,5 @@ export const env = cleanEnv(process.env, {
   COOKIES: isValidPath(),
   REPLAY_DIR: str(),
   HW_ACCEL: str({ choices: ["NVENC", "VAAPI"] }),
+  FFMPEG_PATH: str(),
 });
