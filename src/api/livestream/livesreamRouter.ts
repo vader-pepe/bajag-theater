@@ -59,6 +59,18 @@ livesreamRouter.get("/output.m3u8", async (req, res) => {
   }
 });
 
+livesreamRouter.get("/raw.m3u8", async (_req, res) => {
+  const url = await readFile("url", "utf8").catch(() => "");
+  if (url) {
+    const m3u8 = await getM3u8();
+
+    const serviceResponse = ServiceResponse.success("Success!", m3u8);
+    return handleServiceResponse(serviceResponse, res, true);
+  }
+  const serviceResponse = ServiceResponse.failure("Something went wrong", "No URL Found!");
+  return handleServiceResponse(serviceResponse, res);
+});
+
 livesreamRouter.get("/video.mp4", async (_req, res) => {
   const url = await readFile("url", "utf8").catch(() => "");
   const cookiesPath = path.resolve("cookies/cookies");
