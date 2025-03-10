@@ -101,10 +101,9 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
           "-c:v h264_nvenc", // Use NVENC encoder.
           "-movflags frag_keyframe+empty_moov",
         ])
-        .on("progress", (prg) => {
-          logger.info("nvidia nvenc ran!");
-        })
         .outputFormat("mp4")
+        .on("start", (cmd) => logger.info(`command: ${cmd}`))
+        .on("progress", (prg) => logger.info(`frames: ${prg.frames}`))
         .on("error", (err) => logger.error(err))
         .pipe(res, { end: true });
     }
