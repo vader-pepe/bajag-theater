@@ -128,6 +128,7 @@ cron.schedule("* * * * *", async () => {
       await writeFile("isDownloading", "true");
 
       const video = ytDlpWrap.exec([
+        "--live-from-start",
         url,
         "--cookies",
         cookiesPath,

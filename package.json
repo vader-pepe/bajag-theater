@@ -8,7 +8,7 @@
   "main": "index.ts",
   "private": true,
   "scripts": {
-    "dev": "pnpm run build:css && tsx watch --clear-screen=false src/index.ts | pino-pretty",
+    "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
     "build": "tsup --loader '.html=text'",
     "start": "node dist/index.js",
     "clean": "rimraf dist coverage",
@@ -17,11 +17,13 @@
     "format": "biome format src/",
     "test": "vitest run",
     "prepare": "husky",
-    "build:css": "pnpm dlx @tailwindcss/cli -i public/css/style.css -o public/css/output.css"
+    "build:css": "pnpm dlx @tailwindcss/cli -i public/css/style.css -o public/css/output.css --watch"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.0.0",
     "@tailwindcss/cli": "^4.0.12",
+    "axios": "^1.8.2",
+    "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "daisyui": "^5.0.0",
     "dotenv": "^16.4.5",

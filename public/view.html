@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="valentine">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bajag Theater</title>
   <link href="/css/video-js.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css" type="text/css">
+  <link rel="stylesheet" href="/css/output.css" type="text/css">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -14,52 +14,171 @@
 </head>
 
 <body>
-  <section container style="display: flex; flex-direction: column; align-items: center;">
-    <h3 style="padding-top: 2em; padding-bottom: 2em;">Enjoy Theater Tidak Perlu Pusing Fulus</h3>
-    <video-js width=500 id="vid1" class="vjs-default-skin" controls>
-      <source src="/livestream/output.m3u8" type="application/x-mpegURL">
-    </video-js>
-  </section>
 
-  <section container>
-    <h3 style="padding-top: 1em; padding-bottom: 1em;">Jadwal Theater</h3>
-    <div overflow>
-      <table>
-        <thead>
-          <tr>
-            <th>Minggu</th>
-            <th>Senin</th>
-            <th>Selasa</th>
-            <th>Rabu</th>
-            <th>Kamis</th>
-            <th>Jumat</th>
-            <th>Sabtu</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr hx-trigger="load" hx-get="/schedule/htmx" id="content">
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-        </tbody>
-      </table>
+  <head>
+    <div class="navbar bg-primary text-primary-content">
+      <button class="btn btn-ghost text-xl">Bajag Theater</button>
     </div>
-  </section>
+  </head>
 
-  <section container>
-    <h3>Replay. Pindah kesini ya --> <a href="https://var.bajag-theater.my.id">Replay</a></h3>
+  <section class="mx-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="flex flex-col">
+      <p class="text-left my-4 md:my-10 font-semibold text-md md:text-2xl">Enjoy Theater Tidak Perlu Pusing Fulus</p>
+      <video-js id=vid1 class="flex-1 vjs-default-skin video-js vjs-fluid rounded-md" controls>
+        <source src="/livestream/video.mp4" type="video/mp4">
+      </video-js>
+      <div class="py-2 flex flex-col md:flex-row items-center gap-2">
+        <p class="whitespace-nowrap">Lag? coba gunakan link ini di VLC:
+        <div class="join flex-1">
+          <div class="w-full">
+            <label class="input join-item w-full">
+              <input disabled type="text" value="https://bajag-theater.my.id/raw.m3u8" />
+            </label>
+          </div>
+          <button id="copy" class="btn btn-neutral join-item">Copy</button>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <div class="flex flex-col">
+      <p class="hidden md:block md:text-right text-md md:text-2xl font-semibold md:my-10" id="date"></p>
+      <div class="rounded-md md:px-4 rounded-md bg-base-200 py-4 px-3 flex-1">
+        <p class="font-semibold text-md md:text-2xl">Jadwal</p>
+        <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 mt-4">
+          <table class="table">
+            <tbody>
+              <tr>
+                <td class="text-xl">Minggu</td>
+                <td id="day1" class="flex items-center gap-4">12.00</td>
+              </tr>
+              <tr>
+                <td class="text-xl">Senin</td>
+                <td id="day2">12.00</td>
+              </tr>
+              <tr>
+                <td class="text-xl">Selasa</td>
+                <td id="day3">12.00</td>
+              </tr>
+              <tr>
+                <td class="text-xl">Rabu</td>
+                <td id="day4">12.00</td>
+              </tr>
+              <tr>
+                <td class="text-xl">Kamis</td>
+                <td id="day5">12.00</td>
+              </tr>
+              <tr>
+                <td class="text-xl">Jumat</td>
+                <td id="day6">12.00</td>
+              </tr>
+              <tr>
+                <td class="text-xl">Sabtu</td>
+                <td id="day7">12.00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="flex items-center justify-center my-2">
+        <a href="https://saweria.co/upscale48" target="_blank"
+          class="relative group flex flex-row justify-center min-w-[300px] bg-primary border border-black rounded-lg px-5">
+          <h1 class="text-white my-auto text-3xl font-[Comfortaa] px-4">Dukung kami agar server tetap hidup</h1>
+          <div
+            class="absolute bg-black rounded-lg -z-10 w-full h-full mt-2 ml-4 group-active:ml-2 group-active:mt-1 duration-100">
+          </div>
+        </a>
+      </div>
+
+    </div>
+
+    <div class="md:col-span-2 rounded-md md:px-4 rounded-md bg-base-200 py-4 px-3">
+      <p class="font-semibold text-md md:text-2xl">Replay</p>
+      <p>Pindah dulu yages ->
+        <small><a href="https://var.bajag-theater.my.id" target="_blank"
+            rel="noopener noreferer">https://var.bajag-theater.my.id</a>
+        </small>
+      </p>
+    </div>
+
   </section>
 
   <script src="/js/video.min.js"></script>
-  <script src="/js/htmx.min.js"></script>
   <script>
-    var player = videojs('vid1');
+    var player = videojs('vid1', {
+      responsive: true
+    });
     player.play();
+
+    var dateElement = document.querySelector("#date");
+    var options = {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    };
+    var currentDate = new Date();
+    var formattedDate = currentDate.toLocaleDateString('id-ID', options);
+
+    formattedDate = formattedDate.replace(/\//g, '-');
+
+    dateElement.innerText = formattedDate;
+
+    function updateClipboard(newClip) {
+      navigator.clipboard.writeText(newClip).then(
+        () => {
+          alert("Copied!")
+          /* clipboard successfully set */
+        },
+        (err) => {
+          console.log(err)
+          alert("Failed copy interaction!")
+          /* clipboard write failed */
+        },
+      );
+    };
+
+    // Function to parse an event date from "bulan_tahun" (e.g. "Mar 2025") and "tanggal"
+    const parseEventDate = (event) => {
+      // Split the "bulan_tahun" string into month and year.
+      const [monthStr, yearStr] = event.bulan_tahun.split(" ");
+      // Create a date object from the month string. Using "1" as the day to ensure proper parsing.
+      const tempDate = new Date(`${monthStr} 1, ${yearStr}`);
+      const monthIndex = tempDate.getMonth(); // 0-based index
+      const day = parseInt(event.tanggal, 10);
+      const year = parseInt(yearStr, 10);
+      return new Date(year, monthIndex, day);
+    };
+
+    var copyBtn = document.querySelector("#copy");
+    copyBtn.addEventListener("click", () => {
+      updateClipboard("https://bajag-theater.my.id/raw.m3u8");
+    })
+
+    fetch("/schedule/events").then((data) => {
+      var json = data.json().then((events) => {
+        // Determine the start (Sunday) and end (Saturday) of the current week.
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+        startOfWeek.setHours(0, 0, 0, 0); // clear time
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999); // end of Saturday
+
+        // Filter events that occur during the current week.
+        const eventsThisWeek = events.responseObject.filter(event => {
+          const eventDate = parseEventDate(event);
+          return eventDate >= startOfWeek && eventDate <= endOfWeek;
+        });
+
+        for (let i = 1; i <= 7; i++) {
+          document.querySelector(`#day${i}`).innerHTML = `<p class="px-3 rounded-md py-2 bg-primary text-white font-semibold">${eventsThisWeek[i - 1].event_time}<p/> ${eventsThisWeek[i - 1].event_name}`;
+        }
+
+        console.log(eventsThisWeek);
+      })
+    });
 
   </script>
 </body>
