@@ -78,7 +78,7 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   if (url) {
     res.setHeader("Content-Type", "video/mp4");
-    const readableStream = ytDlpWrap.execStream([url, "--cookies", cookiesPath]);
+    const readableStream = ytDlpWrap.execStream([url, "--cookies", cookiesPath, "--ffmpeg-location", env.FFMPEG_PATH]);
 
     ffmpeg.setFfmpegPath(env.FFMPEG_PATH);
     if (env.HW_ACCEL === "VAAPI") {
