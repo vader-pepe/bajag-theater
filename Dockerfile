@@ -1,50 +1,19 @@
-# Stage 1: Build stage
-FROM node:20-alpine AS build
-
-# Set the working directory
+FROM node:20-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN npm i -g pnpm
+COPY . /app
 WORKDIR /app
 
-# Copy the rest of the application code
-COPY . .
+FROM base AS prod-deps
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod 
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
-RUN npm i -g pnpm
-
-# Install Node.js dependencies
-RUN pnpm install --omit=dev
-
-# Build the application (if needed)
+FROM base AS build
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install 
 RUN pnpm run build
 
-# Stage 2: Runtime stage
-FROM python:3.11-alpine
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Install required packages for yt-dlp and Node.js runtime
-RUN apk add --no-cache \
-    ffmpeg \
-    curl \
-    bash \
-    nodejs \
-    npm
-
-# Install yt-dlp
-RUN pip install --no-cache-dir yt-dlp
-
-# Copy the application from the build stage
-WORKDIR /app
-COPY --from=build /app /app
-
-# Install production dependencies
-RUN pnpm ci --omit=dev
-
-# Expose application port (adjust as per your app)
-EXPOSE 8080
-
-# Default command
-CMD ["node", "dist"]
+FROM base
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=build /app/dist /app/dist
+EXPOSE 3000
+CMD [ "pnpm", "start" ]
