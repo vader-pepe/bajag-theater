@@ -39,5 +39,4 @@ export const env = cleanEnv(process.env, {
   COOKIES: isValidPath(),
   REPLAY_DIR: str(),
   HW_ACCEL: str({ choices: ["NVENC", "VAAPI"] }),
-  ALLOW_DOWNLOAD: bool({ default: true }),
 });

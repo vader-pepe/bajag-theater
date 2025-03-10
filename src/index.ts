@@ -122,7 +122,7 @@ setInterval(async () => {
     logger.info(`Livestream found. ${isDownloading ? "Download process already started" : "Downloading"}`);
 
     // Start download if not already downloading
-    if (!isDownloading && env.ALLOW_DOWNLOAD) {
+    if (!isDownloading) {
       logger.info("Starting stream download");
       await writeFile("isDownloading", "true");
 
