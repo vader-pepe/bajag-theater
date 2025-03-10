@@ -1,6 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import cron from "node-cron";
 import YTDlpWrap from "yt-dlp-wrap";
 
 import { transformInput } from "@/common/utils/dataMapping";
@@ -57,7 +56,7 @@ async function getLocalYTDlpVersion() {
   return version;
 }
 
-cron.schedule("* * * * *", async () => {
+setInterval(async () => {
   const cookiesPath = path.resolve("cookies/cookies");
   const date = getFormattedDate();
   const mkvOutput = `video/${date}.mkv`;
@@ -165,7 +164,8 @@ cron.schedule("* * * * *", async () => {
   } else {
     logger.info("Livestream is ended.");
   }
-});
+
+}, 60 * 1000);
 
 process.on("SIGINT", onCloseSignal);
 process.on("SIGTERM", onCloseSignal);
