@@ -1,5 +1,5 @@
 # Stage 0: Get NVENC-enabled FFmpeg from a prebuilt image
-FROM hiwaymedia/nvenc-docker AS nvffmpeg
+FROM willprice/nvidia-ffmpeg AS nvffmpeg
 
 # Stage 1: Base application image
 FROM node:20-slim AS base
