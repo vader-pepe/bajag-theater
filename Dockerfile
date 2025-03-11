@@ -46,6 +46,10 @@ FROM base AS final
 # Copy NVENC‑enabled ffmpeg binary and its libraries from the nvffmpeg stage
 COPY --from=nvffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY --from=nvffmpeg /usr/local/lib /usr/local/lib
+COPY --from=nvffmpeg /usr/local/cuda/lib64 /usr/local/cuda/lib64
+
+# Set the dynamic linker search path for ffmpeg dependencies.
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
 
 # Copy Node modules and build output from earlier stages
 COPY --from=prod-deps /app/node_modules /app/node_modules
