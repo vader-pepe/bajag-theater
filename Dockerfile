@@ -53,7 +53,7 @@ COPY --from=nvffmpeg /usr/local/lib /usr/local/lib
 COPY --from=nvffmpeg /usr/local/cuda/lib64 /usr/local/cuda/lib64
 
 # Set the dynamic linker search path for ffmpeg dependencies.
-ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
+ENV LD_LIBRARY_PATH="/usr/local/nvidia/lib64:/usr/local/lib:$LD_LIBRARY_PATH"
 
 # Copy Node modules and build output from earlier stages
 COPY --from=prod-deps /app/node_modules /app/node_modules
