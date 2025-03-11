@@ -43,6 +43,10 @@ RUN pnpm build
 # Stage 4: Final image
 #############################
 FROM base AS final
+
+# Install libgomp1 so that libgomp.so.1 is available.
+RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
+
 # Copy NVENC‑enabled ffmpeg binary and its libraries from the nvffmpeg stage
 COPY --from=nvffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY --from=nvffmpeg /usr/local/lib /usr/local/lib
