@@ -106,21 +106,18 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
       ffmpeg(readableStream)
         .inputOptions(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"])
         .outputOptions([
+          // Download GPU frame to system memory, convert to nv12, then re-upload for NVENC.
           "-vf",
           "hwdownload,format=nv12,hwupload_cuda",
           "-c:v",
           "h264_nvenc",
-          "-fflags",
-          "nobuffer",
-          "-flags",
-          "low_delay",
           "-movflags",
           "frag_keyframe+empty_moov",
         ])
         .outputFormat("mp4")
-        .on("start", (cmd) => logger.info(`command: ${cmd}`))
-        .on("progress", (prg) => logger.info(`frames: ${prg.frames}`))
-        .on("error", (err) => logger.error(err))
+        .on("start", (cmd) => console.log("FFmpeg command:", cmd))
+        .on("progress", (progress) => console.log("Frames:", progress.frames))
+        .on("error", (err) => console.error("Error:", err))
         .pipe(res, { end: true });
     }
   }
