@@ -100,6 +100,7 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
         .inputOptions(["-hwaccel cuda", "-hwaccel_output_format cuda"])
         .outputOptions([
           "-vf format=nv12,hwupload_cuda",
+          "-loglevel debug",
           "-c:v h264_nvenc", // Use NVENC encoder.
           "-movflags frag_keyframe+empty_moov",
         ])
