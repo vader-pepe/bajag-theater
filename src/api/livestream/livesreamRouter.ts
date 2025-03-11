@@ -95,6 +95,7 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
         .outputFormat("mp4")
         .pipe(res, { end: true });
     } else if (env.HW_ACCEL === "NVENC") {
+      logger.info("trying to use NVENC");
       return ffmpeg(readableStream)
         .inputOptions(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"])
         .outputOptions([
