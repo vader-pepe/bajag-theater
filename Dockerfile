@@ -44,15 +44,15 @@ RUN pnpm build
 #############################
 FROM base AS final
 
-# Install libgomp1 so that libgomp.so.1 is available.
+# Install any additional runtime libraries needed (e.g. libgomp1 was installed earlier)
 RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
 
-# Copy NVENC‑enabled ffmpeg binary and its libraries from the nvffmpeg stage
+# Copy the NVENC-enabled ffmpeg binary and its non-CUDA libraries from the nvffmpeg stage.
 COPY --from=nvffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY --from=nvffmpeg /usr/local/lib /usr/local/lib
-COPY --from=nvffmpeg /usr/local/cuda/lib64 /usr/local/cuda/lib64
 
-# Set the dynamic linker search path for ffmpeg dependencies.
+# Do NOT copy /usr/local/cuda/lib64 – instead, rely on the host’s driver libraries.
+# Set LD_LIBRARY_PATH to include the host’s NVIDIA driver libraries mount.
 ENV LD_LIBRARY_PATH="/usr/local/nvidia/lib64:/usr/local/lib:$LD_LIBRARY_PATH"
 
 # Copy Node modules and build output from earlier stages
