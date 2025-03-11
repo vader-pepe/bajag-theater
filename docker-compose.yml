@@ -2,10 +2,15 @@ services:
   bajag-theater:
     container_name: theater-container
     image: theater:latest # Replace with the name of the Docker image for the Express app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     build:
       dockerfile: Dockerfile
-    gpus: 
-      - "all,capabilities=video"
     ports:
       - "${PORT}:3000"
     volumes:
