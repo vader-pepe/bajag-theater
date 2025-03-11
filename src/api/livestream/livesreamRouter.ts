@@ -79,18 +79,22 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
   if (url) {
     res.setHeader("Content-Type", "video/mp4");
     const readableStream = ytDlpWrap.execStream([url, "--cookies", cookiesPath, "--ffmpeg-location", env.FFMPEG_PATH]);
-    logger.info("isVAAPI: ", env.HW_ACCEL === "VAAPI");
-    logger.info("isNVENC: ", env.HW_ACCEL === "NVENC");
+    logger.info(`isVAAPI: ${env.HW_ACCEL === "VAAPI"}`);
+    logger.info(`isNVENC: ${env.HW_ACCEL === "NVENC"}`);
 
-    // ffmpeg.setFfmpegPath(env.FFMPEG_PATH);
+    ffmpeg.setFfmpegPath(env.FFMPEG_PATH);
     if (env.HW_ACCEL === "VAAPI") {
-      // return res.send("VAAPI");
       ffmpeg(readableStream)
-        .inputOptions(["-hwaccel vaapi", "-vaapi_device /dev/dri/renderD128"])
+        .inputOptions(["-hwaccel", "vaapi", "-vaapi_device", "/dev/dri/renderD128"])
         .outputOptions([
-          "-vf format=nv12,hwupload",
-          "-c:v h264_vaapi", // Use VAAPI encoder.
-          "-movflags frag_keyframe+empty_moov",
+          "-vf",
+          "format=nv12,hwupload",
+          "-c:v",
+          "h264_vaapi",
+          "-movflags",
+          "frag_keyframe+empty_moov",
+          "-max_muxing_queue_size",
+          "1024",
         ])
         .on("start", (cmd) => logger.info(`command: ${cmd}`))
         .on("progress", (prg) => logger.info(`frames: ${prg.frames}`))
@@ -98,7 +102,6 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
         .outputFormat("mp4")
         .pipe(res, { end: true });
     } else if (env.HW_ACCEL === "NVENC") {
-      // return res.send("NVENC");
       logger.info("trying to use NVENC");
       ffmpeg(readableStream)
         .inputOptions(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"])
@@ -120,9 +123,8 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
         .on("error", (err) => logger.error(err))
         .pipe(res, { end: true });
     }
-    return res.send("Software");
   }
 
-  const serviceResponse = ServiceResponse.failure("Something went wrong", "No URL Found!");
-  return handleServiceResponse(serviceResponse, res);
+  // const serviceResponse = ServiceResponse.failure("Something went wrong", "No URL Found!");
+  // return handleServiceResponse(serviceResponse, res);
 });
