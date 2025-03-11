@@ -80,24 +80,24 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
     res.setHeader("Content-Type", "video/mp4");
     const readableStream = ytDlpWrap.execStream([url, "--cookies", cookiesPath, "--ffmpeg-location", env.FFMPEG_PATH]);
 
-    ffmpeg.setFfmpegPath(env.FFMPEG_PATH);
-    if (env.HW_ACCEL === "VAAPI") {
-      return ffmpeg(readableStream)
-        .inputOptions(["-hwaccel vaapi", "-vaapi_device /dev/dri/renderD128"])
-        .outputOptions([
-          "-vf format=nv12,hwupload",
-          "-c:v h264_vaapi", // Use VAAPI encoder.
-          "-movflags frag_keyframe+empty_moov",
-        ])
-        .on("start", (cmd) => logger.info(`command: ${cmd}`))
-        .on("progress", (prg) => logger.info(`frames: ${prg.frames}`))
-        .on("error", (err) => logger.error(err))
-        .outputFormat("mp4")
-        .pipe(res, { end: true });
-    }
+    // ffmpeg.setFfmpegPath(env.FFMPEG_PATH);
+    // if (env.HW_ACCEL === "VAAPI") {
+    //   return ffmpeg(readableStream)
+    //     .inputOptions(["-hwaccel vaapi", "-vaapi_device /dev/dri/renderD128"])
+    //     .outputOptions([
+    //       "-vf format=nv12,hwupload",
+    //       "-c:v h264_vaapi", // Use VAAPI encoder.
+    //       "-movflags frag_keyframe+empty_moov",
+    //     ])
+    //     .on("start", (cmd) => logger.info(`command: ${cmd}`))
+    //     .on("progress", (prg) => logger.info(`frames: ${prg.frames}`))
+    //     .on("error", (err) => logger.error(err))
+    //     .outputFormat("mp4")
+    //     .pipe(res, { end: true });
+    // }
 
     logger.info("trying to use NVENC");
-    return ffmpeg(readableStream)
+    ffmpeg(readableStream)
       .inputOptions(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"])
       .outputOptions([
         "-vf",
