@@ -16,7 +16,7 @@ services:
     volumes:
       - ${REPLAY_DIR}:/app/replay
       - ${PWD}/cookies:/app/cookies
-      - ${PWD}/video:/app/video
+      - ${DOWNLOAD_DIR}:/app/video
     env_file:
       - .env
     restart: always
