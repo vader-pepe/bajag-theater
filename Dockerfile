@@ -53,7 +53,8 @@ COPY --from=nvffmpeg /usr/local/lib /usr/local/lib
 
 # Do NOT copy /usr/local/cuda/lib64 – instead, rely on the host’s driver libraries.
 # Set LD_LIBRARY_PATH to include the host’s NVIDIA driver libraries mount.
-ENV LD_LIBRARY_PATH="/usr/local/nvidia/lib64:/usr/local/lib:$LD_LIBRARY_PATH"
+COPY --from=nvffmpeg /usr/local/cuda/lib64 /usr/local/cuda/lib64
+ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/lib:$LD_LIBRARY_PATH"
 
 # Copy Node modules and build output from earlier stages
 COPY --from=prod-deps /app/node_modules /app/node_modules
