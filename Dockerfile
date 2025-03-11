@@ -1,34 +1,53 @@
-# Use an NVENC-enabled FFmpeg image as the base.
-# (jrottenberg/ffmpeg:5.1-nvidia is Ubuntu‑based and comes with the right ffmpeg dependencies)
-FROM jrottenberg/ffmpeg:5.1-nvidia AS base
+#############################
+# Stage 0: Get NVENC‑enabled FFmpeg
+#############################
+# Use a prebuilt FFmpeg image that’s built with NVENC support.
+FROM jrottenberg/ffmpeg:5.1-nvidia AS nvffmpeg
+# (We do not run any apt commands here—we simply use this image to copy its FFmpeg binary and libraries)
 
-# Install Node.js, Python3, and npm (adjust as needed).
+#############################
+# Stage 1: Base application image (Node)
+#############################
+FROM node:20-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+# Install only the essentials (here: python3 is installed)
 RUN apt-get update && \
-    apt-get install -y curl python3 nodejs npm && \
+    apt-get install -y python3 && \
     rm -rf /var/lib/apt/lists/*
-
-# Install pnpm globally.
+    
+# Install pnpm globally
 RUN npm install -g pnpm
 
-# (Optional) set PNPM environment variables.
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH:/usr/local/bin:/usr/bin"
-
-# Set the working directory and copy your app.
+# Set work directory and copy app code
 WORKDIR /app
 COPY . /app
 
-# Stage: Install production dependencies.
+#############################
+# Stage 2: Install production dependencies
+#############################
 FROM base AS prod-deps
-RUN pnpm install --prod
+# Use mount cache if available (optional)
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod 
 
-# Stage: Build your app.
+#############################
+# Stage 3: Build the application
+#############################
 FROM base AS build
-RUN pnpm install
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install
+# Run your build command (assumes it generates /app/dist)
 RUN pnpm build
 
-# Final stage: use the same base (which already has all ffmpeg dependencies)
-FROM base
+#############################
+# Stage 4: Final image
+#############################
+FROM base AS final
+# Copy NVENC‑enabled ffmpeg binary and its libraries from the nvffmpeg stage
+COPY --from=nvffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
+COPY --from=nvffmpeg /usr/local/lib /usr/local/lib
+
+# Copy Node modules and build output from earlier stages
 COPY --from=prod-deps /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
 
