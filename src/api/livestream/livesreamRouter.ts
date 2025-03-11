@@ -94,24 +94,24 @@ livesreamRouter.get("/video.mp4", async (_req, res) => {
         .on("error", (err) => logger.error(err))
         .outputFormat("mp4")
         .pipe(res, { end: true });
-    } else {
-      logger.info("trying to use NVENC");
-      return ffmpeg(readableStream)
-        .inputOptions(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"])
-        .outputOptions([
-          "-vf",
-          "hwdownload,format=nv12,hwupload_cuda",
-          "-c:v",
-          "h264_nvenc",
-          "-movflags",
-          "frag_keyframe+empty_moov",
-        ])
-        .outputFormat("mp4")
-        .on("start", (cmd) => logger.info(`command: ${cmd}`))
-        .on("progress", (prg) => logger.info(`frames: ${prg.frames}`))
-        .on("error", (err) => logger.error(err))
-        .pipe(res, { end: true });
     }
+
+    logger.info("trying to use NVENC");
+    return ffmpeg(readableStream)
+      .inputOptions(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"])
+      .outputOptions([
+        "-vf",
+        "hwdownload,format=nv12,hwupload_cuda",
+        "-c:v",
+        "h264_nvenc",
+        "-movflags",
+        "frag_keyframe+empty_moov",
+      ])
+      .outputFormat("mp4")
+      .on("start", (cmd) => logger.info(`command: ${cmd}`))
+      .on("progress", (prg) => logger.info(`frames: ${prg.frames}`))
+      .on("error", (err) => logger.error(err))
+      .pipe(res, { end: true });
   }
 
   const serviceResponse = ServiceResponse.failure("Something went wrong", "No URL Found!");
