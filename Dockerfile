@@ -51,7 +51,7 @@ RUN echo "deb http://deb.debian.org/debian bookworm-backports main" | tee "/etc/
 
 RUN apt-get update
 
-RUN apt -t bookworm-backports install streamlink
+RUN apt -t bookworm-backports install streamlink -y
 
 # Copy the NVENC-enabled ffmpeg binary and its non-CUDA libraries from the nvffmpeg stage.
 COPY --from=nvffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
