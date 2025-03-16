@@ -200,7 +200,7 @@ setInterval(async () => {
 
     // Start download if not already downloading
     if (!isDownloading) {
-      await downloadStream(url, "best", cookiesPath, output, 20);
+      // await downloadStream(url, "best", cookiesPath, output, 20);
     }
   }
 }, 60 * 1000);
