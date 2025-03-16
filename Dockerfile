@@ -49,6 +49,8 @@ RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
 
 RUN echo "deb http://deb.debian.org/debian bookworm-backports main" | tee "/etc/apt/sources.list.d/streamlink.list"
 
+RUN apt-get update
+
 RUN apt -t bookworm-backports install streamlink
 
 # Copy the NVENC-enabled ffmpeg binary and its non-CUDA libraries from the nvffmpeg stage.
