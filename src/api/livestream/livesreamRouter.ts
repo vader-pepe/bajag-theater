@@ -2,10 +2,33 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
+// @ts-ignore
+import proxy from "@warren-bank/hls-proxy/hls-proxy/proxy";
 import express, { type Router } from "express";
 import ffmpeg from "fluent-ffmpeg";
 import YTDlpWrap from "yt-dlp-wrap";
 import { z } from "zod";
+
+const middleware = proxy({
+  is_secure: false,
+  host: null,
+  copy_req_headers: false,
+  req_headers: null,
+  req_options: null,
+  hooks: null,
+  cache_segments: true,
+  max_segments: 20,
+  cache_timeout: 60,
+  cache_key: 0,
+  cache_storage: null,
+  cache_storage_fs_dirpath: null,
+  debug_level: 3,
+  acl_ip: null,
+  acl_pass: null,
+  http_proxy: null,
+  manifest_extension: null,
+  segment_extension: null,
+});
 
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { env } from "@/common/utils/envConfig";
@@ -31,6 +54,8 @@ async function getM3u8() {
 
   return m3u8;
 }
+
+livesreamRouter.get("/proxy/*", middleware.request);
 
 livesreamRouter.get("/output.m3u8", async (req, res) => {
   const sourceUrl = `${req.protocol}://${req.get("host")}`;
@@ -59,69 +84,33 @@ livesreamRouter.get("/output.m3u8", async (req, res) => {
   }
 });
 
-livesreamRouter.get("/raw.m3u8", async (_req, res) => {
+livesreamRouter.get("/raw", async (_req, res) => {
+  const cookiesPath = path.resolve("cookies/cookies");
+  const ytdlpath = path.resolve(".");
+  const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
   const url = await readFile("url", "utf8").catch(() => "");
-  if (url) {
-    const m3u8 = await getM3u8();
-
-    const serviceResponse = ServiceResponse.success("Success!", m3u8);
-    return handleServiceResponse(serviceResponse, res, true);
+  if (!url) {
+    const serviceResponse = ServiceResponse.failure("Something went wrong", "No URL Found!");
+    return handleServiceResponse(serviceResponse, res);
   }
-  const serviceResponse = ServiceResponse.failure("Something went wrong", "No URL Found!");
-  return handleServiceResponse(serviceResponse, res);
+
+  const readableStream = ytDlpWrap.execStream([url, "--cookies", cookiesPath, "--ffmpeg-location", env.FFMPEG_PATH]);
+
+  readableStream.pipe(res);
 });
 
-livesreamRouter.get("/video.mp4", async (_req, res) => {
+livesreamRouter.get("/index.m3u8", async (_req, res) => {
   const url = await readFile("url", "utf8").catch(() => "");
   const cookiesPath = path.resolve("cookies/cookies");
   const ytdlpath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlpath}/yt-dlp`);
+  if (!url) {
+    const serviceResponse = ServiceResponse.failure("Something went wrong", "No URL Found!");
+    return handleServiceResponse(serviceResponse, res);
+  }
+
   if (url) {
     res.setHeader("Content-Type", "video/mp4");
     const readableStream = ytDlpWrap.execStream([url, "--cookies", cookiesPath, "--ffmpeg-location", env.FFMPEG_PATH]);
-    logger.info(`isVAAPI: ${env.HW_ACCEL === "VAAPI"}`);
-    logger.info(`isNVENC: ${env.HW_ACCEL === "NVENC"}`);
-
-    ffmpeg.setFfmpegPath(env.FFMPEG_PATH);
-    if (env.HW_ACCEL === "VAAPI") {
-      ffmpeg(readableStream)
-        .inputOptions(["-hwaccel", "vaapi", "-vaapi_device", "/dev/dri/renderD128"])
-        .outputOptions([
-          "-vf",
-          "format=nv12,hwupload",
-          "-c:v",
-          "h264_vaapi",
-          "-movflags",
-          "frag_keyframe+empty_moov",
-          "-max_muxing_queue_size",
-          "1024",
-        ])
-        .on("start", (cmd) => logger.info(`command: ${cmd}`))
-        .on("progress", (prg) => logger.info(`frames: ${prg.frames}`))
-        .on("error", (err) => logger.error(err))
-        .outputFormat("mp4")
-        .pipe(res, { end: true });
-    } else if (env.HW_ACCEL === "NVENC") {
-      logger.info("trying to use NVENC");
-      ffmpeg(readableStream)
-        .inputOptions(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"])
-        .outputOptions([
-          // Download GPU frame to system memory, convert to nv12, then re-upload for NVENC.
-          "-vf",
-          "hwdownload,format=nv12,hwupload_cuda",
-          "-c:v",
-          "h264_nvenc",
-          "-movflags",
-          "frag_keyframe+empty_moov",
-        ])
-        .outputFormat("mp4")
-        .on("start", (cmd) => console.log("FFmpeg command:", cmd))
-        .on("progress", (progress) => console.log("Frames:", progress.frames))
-        .on("error", (err) => console.error("Error:", err))
-        .pipe(res, { end: true });
-    }
   }
-
-  // const serviceResponse = ServiceResponse.failure("Something went wrong", "No URL Found!");
-  // return handleServiceResponse(serviceResponse, res);
 });

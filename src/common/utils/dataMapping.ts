@@ -86,3 +86,18 @@ export function transformInput(input: string): YoutubeData[] {
     throw new Error("Invalid input format. Could not parse JSON.");
   }
 }
+
+export function parseNetscapeCookies(fileContent: string): string[] {
+  const cookies: string[] = [];
+  const lines = fileContent.split("\n");
+  for (const line of lines) {
+    if (line.startsWith("#") || line.trim() === "") continue;
+    const tokens = line.split("\t");
+    if (tokens.length >= 7) {
+      const name = tokens[5];
+      const value = tokens[6];
+      cookies.push(`${name}=${value}`);
+    }
+  }
+  return cookies;
+}

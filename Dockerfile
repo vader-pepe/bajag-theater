@@ -16,7 +16,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN apt-get update && \
     apt-get install -y python3 && \
     rm -rf /var/lib/apt/lists/*
-    
+
 # Install pnpm globally
 RUN npm install -g pnpm
 
@@ -46,6 +46,10 @@ FROM base AS final
 
 # Install any additional runtime libraries needed (e.g. libgomp1 was installed earlier)
 RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
+
+RUN echo "deb http://deb.debian.org/debian bookworm-backports main" | tee "/etc/apt/sources.list.d/streamlink.list"
+
+RUN apt -t bookworm-backports install streamlink
 
 # Copy the NVENC-enabled ffmpeg binary and its non-CUDA libraries from the nvffmpeg stage.
 COPY --from=nvffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg

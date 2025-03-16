@@ -1,11 +1,12 @@
+import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import YTDlpWrap from "yt-dlp-wrap";
 
-import { transformInput } from "@/common/utils/dataMapping";
+import { parseNetscapeCookies, transformInput } from "@/common/utils/dataMapping";
+import { getFormattedDate } from "@/common/utils/date";
 import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
-import { getFormattedDate } from "./common/utils/date";
 
 const { NODE_ENV, HOST, PORT } = env;
 const server = app.listen(env.PORT, () => {
@@ -56,10 +57,86 @@ async function getLocalYTDlpVersion() {
   return version;
 }
 
+async function downloadStream(
+  url: string,
+  quality: string,
+  cookiesPath: string,
+  outputFile: string,
+  maxRetries = 3,
+): Promise<void> {
+  let attempts = 0;
+
+  while (attempts < maxRetries) {
+    attempts++;
+    logger.info(`Starting stream download attempt ${attempts}`);
+    // Mark as downloading (for your service logic)
+    await writeFile("isDownloading", "true");
+
+    // Build the Streamlink arguments.
+    // Using --hls-live-restart to start the stream from the beginning.
+    // The --player= option forces Streamlink to not launch any external player.
+    const args: string[] = ["--hls-live-restart", url, quality, "--no-config", "--player=", "-o", outputFile];
+
+    // If a cookie file is provided, read and parse it, then pass each cookie.
+    if (cookiesPath) {
+      try {
+        const cookieContent = await readFile(cookiesPath, "utf-8");
+        const cookies = parseNetscapeCookies(cookieContent);
+        cookies.forEach((cookie) => {
+          args.push("--http-cookie");
+          args.push(cookie);
+        });
+      } catch (err) {
+        logger.error("Error reading cookie file:", err);
+        await writeFile("isDownloading", "false");
+        throw err;
+      }
+    }
+
+    // Log the complete command for debugging.
+    const commandStr = `streamlink ${args.map((arg) => `"${arg}"`).join(" ")}`;
+    logger.info(`Executing command:${commandStr}`);
+
+    // Spawn the Streamlink process.
+    const proc = spawn("streamlink", args);
+
+    // Optionally listen to stdout for progress information.
+    proc.stdout.on("data", (data: Buffer) => {
+      logger.info(`Progress: ${data.toString()}`);
+    });
+    // Log any error output.
+    proc.stderr.on("data", (data: Buffer) => {
+      logger.error(`Streamlink error output: ${data.toString()}`);
+    });
+
+    // Wait for the process to complete.
+    const exitCode: number = await new Promise((resolve) => {
+      proc.on("close", resolve);
+    });
+
+    if (exitCode === 0) {
+      logger.info("Stream download completed successfully.");
+      await writeFile("isDownloading", "false");
+      // Clear URL or perform any post-download cleanup.
+      await writeFile("url", "");
+      break;
+    } else {
+      logger.error(`Download failed with exit code ${exitCode}. Retrying in 10 seconds...`);
+      await writeFile("isDownloading", "false");
+      // Wait before retrying.
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+  }
+
+  if (attempts >= maxRetries) {
+    logger.error("Exceeded maximum retry attempts. Download failed.");
+  }
+}
+
 setInterval(async () => {
   const cookiesPath = path.resolve("cookies/cookies");
   const date = getFormattedDate();
-  const mkvOutput = `video/${date}.mkv`;
+  const output = `video/${date}.ts`;
   const channel = env.isProd ? "https://www.youtube.com/@JKT48TV" : "https://www.youtube.com/@LofiGirl";
   const ytdlPath = path.resolve(".");
   const ytDlpWrap = new YTDlpWrap(`${ytdlPath}/yt-dlp`);
@@ -123,46 +200,8 @@ setInterval(async () => {
 
     // Start download if not already downloading
     if (!isDownloading) {
-      logger.info("Starting stream download");
-      await writeFile("isDownloading", "true");
-
-      const video = ytDlpWrap.exec([
-        "--live-from-start",
-        url,
-        "--cookies",
-        cookiesPath,
-        "--merge-output-format",
-        "mkv",
-        "--postprocessor-args",
-        "-c:a aac -b:a 128k",
-        "-o",
-        mkvOutput,
-      ]);
-
-      video
-        .on("progress", (progress) => {
-          logger.info(`Progress: ${progress.percent}% | Speed: ${progress.currentSpeed} | ETA: ${progress.eta}`);
-        })
-        .on("ytDlpEvent", (eventType, eventData) => {
-          logger.info(`Event: ${eventType} | Data: ${JSON.stringify(eventData)}`);
-        })
-        .on("error", async (error) => {
-          logger.error("Download error occurred", error);
-          await writeFile("isDownloading", "false");
-        })
-        .on("close", async () => {
-          logger.info("Stream download completed or process ended");
-          await writeFile("isDownloading", "false");
-
-          // Clear URL after successful download
-          logger.info("Clearing URL after successful download...");
-          await writeFile("url", "");
-        });
-
-      logger.info(`Download process started with PID: ${video?.ytDlpProcess?.pid}`);
+      await downloadStream(url, "best", cookiesPath, output, 20);
     }
-  } else {
-    logger.info("Livestream is ended.");
   }
 }, 60 * 1000);
 

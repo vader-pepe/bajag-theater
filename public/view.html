@@ -27,14 +27,14 @@
     <div class="flex flex-col">
       <p class="text-left my-4 md:my-10 font-semibold text-md md:text-2xl">Enjoy Theater Tidak Perlu Pusing Fulus</p>
       <video-js id=vid1 class="flex-1 vjs-default-skin video-js vjs-fluid rounded-md" controls>
-        <source src="/livestream/video.mp4" type="video/mp4">
+        <source src="/livestream/output.m3u8" type="application/x-mpegURL">
       </video-js>
       <div class="py-2 flex flex-col md:flex-row items-center gap-2">
         <p class="whitespace-nowrap">Lag? coba gunakan link ini di VLC:
         <div class="join flex-1">
           <div class="w-full">
             <label class="input join-item w-full">
-              <input disabled type="text" value="https://bajag-theater.my.id/livestream/raw.m3u8" />
+              <input disabled id="vlc_link" type="text" value="" />
             </label>
           </div>
           <button id="copy" class="btn btn-neutral join-item">Copy</button>
@@ -107,6 +107,9 @@
 
   <script src="/js/video.min.js"></script>
   <script>
+    var vlc_link = document.querySelector("#vlc_link");
+    var currentLocation = window.location;
+    vlc_link.value = `${currentLocation.protocol}//${currentLocation.hostname}:${currentLocation.port}/livestream/raw`;
     var player = videojs('vid1', {
       responsive: true
     });
@@ -154,8 +157,7 @@
 
     var copyBtn = document.querySelector("#copy");
     copyBtn.addEventListener("click", () => {
-      var currentLocation = window.location;
-      updateClipboard(`${currentLocation.protocol}//${currentLocation.hostname}:${currentLocation.port}/livestream/raw.m3u8`);
+      updateClipboard(vlc_link.value);
     })
 
     fetch("/schedule/events").then((data) => {
